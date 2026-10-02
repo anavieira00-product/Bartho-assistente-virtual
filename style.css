@@ -1,0 +1,2618 @@
+/* =========================================
+   BARTHO — CASE DE PRODUTO
+   style.css
+========================================= */
+
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Manrope:wght@600;700;800&display=swap");
+
+
+/* =========================================
+   VARIÁVEIS
+========================================= */
+
+:root {
+    --blue: #0d4388;
+    --blue-light: #1759a0;
+    --blue-dark: #082a5b;
+    --navy: #061f42;
+
+    --yellow: #ffb000;
+    --yellow-light: #fff4d8;
+
+    --green: #1ba97a;
+    --green-light: #e3f8f1;
+
+    --text: #334a67;
+    --muted: #71819b;
+
+    --background: #f5f8fc;
+    --white: #ffffff;
+    --border: #dce6f1;
+
+    --shadow: 0 20px 60px rgba(13, 67, 136, 0.12);
+}
+
+
+/* =========================================
+   RESET
+========================================= */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    font-family: "Inter", Arial, sans-serif;
+    background: var(--white);
+    color: var(--text);
+    line-height: 1.7;
+    overflow-x: hidden;
+}
+
+img {
+    display: block;
+    max-width: 100%;
+}
+
+a {
+    color: inherit;
+}
+
+
+/* =========================================
+   TIPOGRAFIA
+========================================= */
+
+h1,
+h2,
+h3,
+.logo {
+    font-family: "Manrope", "Inter", sans-serif;
+}
+
+h2 {
+    color: var(--blue-dark);
+    font-size: clamp(2rem, 4vw, 3.7rem);
+    line-height: 1.08;
+    letter-spacing: -0.04em;
+}
+
+h3 {
+    color: var(--blue-dark);
+}
+
+.tag {
+    margin-bottom: 18px;
+    color: var(--blue);
+    font-size: 0.76rem;
+    font-weight: 800;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+}
+
+
+/* =========================================
+   HEADER
+========================================= */
+
+.header {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+
+    height: 76px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    padding: 0 6vw;
+
+    background: rgba(255, 255, 255, 0.94);
+    border-bottom: 1px solid var(--border);
+
+    backdrop-filter: blur(14px);
+
+    transition:
+        box-shadow 0.3s ease,
+        height 0.3s ease;
+}
+
+.header-scrolled {
+    height: 68px;
+    box-shadow: 0 8px 30px rgba(8, 42, 91, 0.08);
+}
+
+.logo {
+    color: var(--blue-dark);
+    font-size: 1.2rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-decoration: none;
+}
+
+.logo span {
+    color: var(--yellow);
+}
+
+.nav {
+    display: flex;
+    gap: 28px;
+}
+
+.nav a {
+    position: relative;
+    color: var(--text);
+    font-size: 0.88rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.nav a:hover,
+.nav a.active {
+    color: var(--blue);
+}
+
+.nav a::after {
+    content: "";
+
+    position: absolute;
+    left: 0;
+    bottom: -8px;
+
+    width: 0;
+    height: 2px;
+
+    background: var(--yellow);
+
+    transition: width 0.25s ease;
+}
+
+.nav a:hover::after,
+.nav a.active::after {
+    width: 100%;
+}
+
+
+/* =========================================
+   BOTÕES
+========================================= */
+
+.button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    min-height: 52px;
+    padding: 0 24px;
+
+    border-radius: 12px;
+
+    font-size: 0.92rem;
+    font-weight: 800;
+    text-decoration: none;
+
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease,
+        background 0.2s ease;
+}
+
+.button:hover {
+    transform: translateY(-2px);
+}
+
+.button-primary {
+    background: var(--yellow);
+    color: var(--navy);
+    box-shadow: 0 12px 28px rgba(255, 176, 0, 0.24);
+}
+
+.button-primary:hover {
+    box-shadow: 0 16px 36px rgba(255, 176, 0, 0.34);
+}
+
+.button-secondary {
+    background: var(--white);
+    color: var(--blue);
+    border: 1px solid var(--border);
+}
+
+.button-light {
+    margin-top: 22px;
+    background: var(--white);
+    color: var(--blue);
+}
+
+
+/* =========================================
+   HERO
+========================================= */
+
+.hero {
+    position: relative;
+
+    min-height: calc(100vh - 76px);
+
+    display: grid;
+    grid-template-columns: 1.08fr 0.92fr;
+    align-items: center;
+
+    padding: 65px 7vw 30px;
+
+    background:
+        radial-gradient(
+            circle at 82% 35%,
+            rgba(255, 176, 0, 0.14),
+            transparent 26%
+        ),
+        linear-gradient(
+            135deg,
+            #ffffff 0%,
+            #f6f9fd 55%,
+            #edf4fb 100%
+        );
+
+    overflow: hidden;
+}
+
+.hero-content {
+    position: relative;
+    z-index: 3;
+    max-width: 780px;
+}
+
+.hero h1 {
+    margin-bottom: 32px;
+
+    color: var(--blue);
+
+    font-size: clamp(5rem, 11vw, 9.5rem);
+    line-height: 0.8;
+    letter-spacing: -0.08em;
+}
+
+.hero h2 {
+    max-width: 720px;
+    margin-bottom: 24px;
+    font-size: clamp(2rem, 4vw, 4rem);
+}
+
+.hero-description {
+    max-width: 720px;
+    font-size: 1.05rem;
+}
+
+
+/* =========================================
+   MÉTRICAS DO HERO
+========================================= */
+
+.hero-metrics {
+    display: flex;
+    gap: 42px;
+    margin: 38px 0;
+}
+
+.hero-metric {
+    display: flex;
+    flex-direction: column;
+
+    opacity: 0;
+    transform: translateY(12px);
+
+    transition:
+        opacity 0.5s ease,
+        transform 0.5s ease;
+}
+
+.hero-metric.metric-visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.hero-metric strong {
+    color: var(--blue);
+    font-family: "Manrope", sans-serif;
+    font-size: 2.1rem;
+    line-height: 1;
+}
+
+.hero-metric span {
+    max-width: 160px;
+    margin-top: 7px;
+    color: var(--muted);
+    font-size: 0.78rem;
+    line-height: 1.4;
+}
+
+.hero-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+
+/* =========================================
+   PERSONAGEM DO HERO
+========================================= */
+
+.hero-image {
+    position: relative;
+
+    height: 650px;
+
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+}
+
+.hero-image::before {
+    content: "";
+
+    position: absolute;
+
+    width: 510px;
+    height: 510px;
+
+    top: 65px;
+
+    border-radius: 50%;
+    background: rgba(255, 176, 0, 0.15);
+}
+
+.hero-image img {
+    position: relative;
+    z-index: 2;
+
+    width: min(650px, 110%);
+    max-height: 650px;
+
+    object-fit: contain;
+
+    filter: drop-shadow(
+        0 30px 30px rgba(8, 42, 91, 0.14)
+    );
+}
+
+.prototype-badge {
+    position: absolute;
+    z-index: 4;
+
+    right: 0;
+    bottom: 100px;
+
+    padding: 14px 18px;
+
+    background: var(--white);
+
+    border-radius: 14px;
+
+    color: var(--blue-dark);
+
+    font-size: 0.86rem;
+    font-weight: 700;
+
+    box-shadow: var(--shadow);
+}
+
+.prototype-badge span {
+    display: inline-block;
+
+    width: 9px;
+    height: 9px;
+
+    margin-right: 8px;
+
+    border-radius: 50%;
+
+    background: #2ed79a;
+}
+
+
+/* =========================================
+   INTRODUÇÃO
+========================================= */
+
+.intro {
+    padding: 120px 12vw;
+    text-align: center;
+}
+
+.intro h2 {
+    max-width: 850px;
+    margin: 0 auto 28px;
+}
+
+.intro > p:last-child {
+    max-width: 900px;
+    margin: auto;
+    font-size: 1.12rem;
+}
+
+
+/* =========================================
+   SEÇÕES DO CASE
+========================================= */
+
+.case-section {
+    display: grid;
+    grid-template-columns: 120px minmax(0, 1fr);
+    gap: 50px;
+
+    padding: 110px 10vw;
+
+    border-top: 1px solid var(--border);
+}
+
+.section-light {
+    background: var(--background);
+}
+
+.section-number {
+    color: #d8e4f0;
+
+    font-family: "Manrope", sans-serif;
+    font-size: 4rem;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.section-content {
+    max-width: 1050px;
+}
+
+.section-content h2 {
+    max-width: 900px;
+    margin-bottom: 30px;
+}
+
+.section-content > p:not(.tag) {
+    max-width: 860px;
+    margin-bottom: 20px;
+    font-size: 1.05rem;
+}
+
+
+/* =========================================
+   PROBLEMA
+========================================= */
+
+blockquote {
+    max-width: 920px;
+
+    margin-top: 45px;
+    padding: 8px 0 8px 30px;
+
+    border-left: 5px solid var(--yellow);
+
+    color: var(--blue);
+
+    font-family: "Manrope", sans-serif;
+    font-size: clamp(1.45rem, 3vw, 2.35rem);
+    font-weight: 700;
+    line-height: 1.35;
+}
+
+
+/* =========================================
+   HIPÓTESE
+========================================= */
+
+.logic-flow {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+
+    gap: 15px;
+
+    margin: 42px 0 30px;
+}
+
+.logic-flow > div {
+    display: flex;
+    flex-direction: column;
+
+    min-width: 180px;
+
+    padding: 20px;
+
+    background: var(--white);
+
+    border: 1px solid var(--border);
+    border-radius: 14px;
+
+    box-shadow: 0 8px 25px rgba(13, 67, 136, 0.05);
+}
+
+.logic-flow > div span {
+    margin-bottom: 5px;
+
+    color: var(--yellow);
+
+    font-size: 0.75rem;
+    font-weight: 800;
+}
+
+.logic-flow strong {
+    color: var(--blue-dark);
+}
+
+.arrow {
+    color: var(--yellow);
+    font-size: 1.8rem;
+    font-weight: 800;
+}
+
+.highlight-text {
+    color: var(--muted);
+}
+
+
+/* =========================================
+   ESCOPO
+========================================= */
+
+.scope-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+
+    gap: 16px;
+
+    margin-top: 40px;
+}
+
+.scope-card {
+    padding: 26px;
+
+    background: var(--white);
+
+    border: 1px solid var(--border);
+    border-radius: 16px;
+
+    transition:
+        transform 0.25s ease,
+        box-shadow 0.25s ease;
+}
+
+.scope-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow);
+}
+
+.scope-card > span {
+    color: var(--yellow);
+    font-size: 1.5rem;
+    font-weight: 900;
+}
+
+.scope-card h3 {
+    margin: 8px 0;
+    font-size: 1.08rem;
+}
+
+.scope-card p {
+    color: var(--muted);
+    font-size: 0.9rem;
+    line-height: 1.55;
+}
+
+.out-of-scope {
+    max-width: 950px;
+
+    margin-top: 22px;
+    padding: 22px;
+
+    background: var(--yellow-light);
+
+    border-radius: 14px;
+}
+
+.out-of-scope strong {
+    color: #5d4500;
+}
+
+.out-of-scope p {
+    margin-top: 5px;
+    margin-bottom: 0;
+    color: #695723;
+}
+
+
+/* =========================================
+   ARQUITETURA
+========================================= */
+
+.architecture {
+    padding: 110px 8vw;
+
+    background: linear-gradient(
+        145deg,
+        #061f42,
+        #082c5b
+    );
+
+    color: #d8e5f5;
+}
+
+.architecture-title {
+    max-width: 820px;
+}
+
+.architecture .tag {
+    color: var(--yellow);
+}
+
+.architecture h2 {
+    margin-bottom: 25px;
+    color: var(--white);
+}
+
+.architecture-flow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+
+    gap: 10px;
+
+    margin: 60px 0;
+}
+
+.architecture-flow div {
+    padding: 15px 18px;
+
+    background: #0d4388;
+
+    border: 1px solid #2b65a9;
+    border-radius: 11px;
+
+    color: var(--white);
+
+    font-size: 0.9rem;
+    font-weight: 800;
+}
+
+.architecture-flow > span {
+    color: var(--yellow);
+    font-size: 1.4rem;
+    font-weight: 800;
+}
+
+.technology-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+}
+
+.technology-grid article {
+    padding: 26px;
+
+    background: #0a2b57;
+
+    border: 1px solid #17467c;
+    border-radius: 16px;
+}
+
+.technology-grid h3 {
+    margin-bottom: 8px;
+    color: var(--white);
+}
+
+.technology-grid p {
+    color: #b8cce5;
+    font-size: 0.9rem;
+}
+
+
+/* =========================================
+   DECISÃO DE PRODUTO
+========================================= */
+
+.product-decision {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+
+    gap: 80px;
+
+    padding: 110px 10vw;
+
+    background: var(--yellow);
+}
+
+.product-decision .tag {
+    color: var(--navy);
+}
+
+.product-decision h2 {
+    color: var(--navy);
+}
+
+.product-decision p {
+    color: #473a17;
+}
+
+.decision-highlight {
+    margin-top: 32px;
+
+    color: var(--navy);
+
+    font-family: "Manrope", sans-serif;
+    font-size: 1.35rem;
+}
+
+.decision-highlight strong {
+    display: block;
+}
+
+
+/* =========================================
+   MÉTRICAS
+========================================= */
+
+.metrics-section {
+    padding: 120px 10vw;
+    text-align: center;
+}
+
+.metrics-section h2 {
+    max-width: 850px;
+    margin: 0 auto 25px;
+}
+
+.metrics-description {
+    max-width: 760px;
+    margin: 0 auto 45px;
+}
+
+.main-metric {
+    max-width: 720px;
+
+    margin: auto;
+    padding: 40px;
+
+    background: linear-gradient(
+        135deg,
+        var(--blue),
+        var(--blue-light)
+    );
+
+    border-radius: 22px;
+
+    color: var(--white);
+
+    box-shadow: var(--shadow);
+}
+
+.main-metric span {
+    display: block;
+
+    margin-bottom: 8px;
+
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.13em;
+}
+
+.main-metric strong {
+    display: block;
+
+    font-family: "Manrope", sans-serif;
+    font-size: clamp(1.7rem, 4vw, 3rem);
+}
+
+.secondary-metrics {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+
+    gap: 10px;
+
+    max-width: 900px;
+
+    margin: 25px auto 0;
+}
+
+.secondary-metrics span {
+    padding: 10px 16px;
+
+    border: 1px solid var(--border);
+    border-radius: 999px;
+
+    font-size: 0.84rem;
+}
+
+
+/* =========================================
+   TESTES COM USUÁRIOS
+========================================= */
+
+.tests-section {
+    display: grid;
+    grid-template-columns: 1fr 0.75fr;
+    align-items: center;
+
+    gap: 80px;
+
+    padding: 110px 10vw;
+
+    background: var(--background);
+}
+
+.tests-content {
+    max-width: 760px;
+}
+
+.tests-content h2 {
+    margin-bottom: 28px;
+}
+
+.tests-content > p:not(.tag) {
+    margin-bottom: 18px;
+}
+
+.test-result {
+    text-align: center;
+}
+
+.percentage {
+    width: 270px;
+    height: 270px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    margin: 0 auto 28px;
+
+    background: var(--white);
+
+    border: 25px solid var(--yellow);
+    border-radius: 50%;
+
+    color: var(--blue);
+
+    font-family: "Manrope", sans-serif;
+    font-size: 4.2rem;
+    font-weight: 800;
+
+    box-shadow: var(--shadow);
+}
+
+.test-result > strong {
+    display: block;
+
+    margin-bottom: 15px;
+
+    color: var(--blue-dark);
+
+    font-family: "Manrope", sans-serif;
+    font-size: 1.2rem;
+}
+
+.test-result p {
+    max-width: 430px;
+    margin: 0 auto 12px;
+}
+
+.test-result small {
+    display: block;
+
+    max-width: 430px;
+
+    margin: auto;
+
+    color: var(--muted);
+
+    font-size: 0.75rem;
+}
+
+
+/* =========================================
+   CONSTRUÇÃO E VALIDAÇÃO
+========================================= */
+
+.evidence-section {
+    padding: 110px 10vw;
+
+    background: var(--white);
+
+    border-top: 1px solid var(--border);
+}
+
+.evidence-header {
+    max-width: 850px;
+    margin-bottom: 55px;
+}
+
+.evidence-header h2 {
+    margin-bottom: 25px;
+}
+
+.evidence-header > p:last-child {
+    max-width: 760px;
+    font-size: 1.05rem;
+}
+
+
+/* CARDS DE EVIDÊNCIA */
+
+.evidence-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+
+    gap: 24px;
+}
+
+.evidence-card {
+    overflow: hidden;
+
+    background: var(--white);
+
+    border: 1px solid var(--border);
+    border-radius: 20px;
+
+    transition:
+        transform 0.25s ease,
+        box-shadow 0.25s ease;
+}
+
+.evidence-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow);
+}
+
+
+/* IMAGENS DAS EVIDÊNCIAS */
+
+.evidence-image {
+    position: relative;
+
+    width: 100%;
+    height: 360px;
+
+    overflow: hidden;
+
+    background: #0b1220;
+}
+
+.evidence-image img {
+    width: 100%;
+    height: 100%;
+
+    object-fit: cover;
+    object-position: top center;
+
+    transition: transform 0.4s ease;
+}
+
+.evidence-card:hover .evidence-image img {
+    transform: scale(1.015);
+}
+
+
+/* TEXTO DAS EVIDÊNCIAS */
+
+.evidence-content {
+    padding: 28px;
+}
+
+.evidence-number {
+    display: block;
+
+    margin-bottom: 8px;
+
+    color: var(--yellow);
+
+    font-size: 0.75rem;
+    font-weight: 800;
+}
+
+.evidence-content h3 {
+    margin-bottom: 12px;
+
+    color: var(--blue-dark);
+
+    font-size: 1.25rem;
+}
+
+.evidence-content p {
+    color: var(--muted);
+
+    font-size: 0.92rem;
+}
+
+
+/* INSIGHT DOS TESTES */
+
+.evidence-insight {
+    display: grid;
+    grid-template-columns: 150px 1fr;
+
+    gap: 25px;
+
+    margin-top: 25px;
+    padding: 28px;
+
+    background: var(--blue-dark);
+
+    border-radius: 16px;
+
+    color: var(--white);
+}
+
+.evidence-insight span {
+    color: var(--yellow);
+
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+}
+
+.evidence-insight p {
+    max-width: 850px;
+
+    margin: 0;
+
+    color: #d8e5f5;
+}
+
+
+/* =========================================
+   RESULTADOS DOS TESTES
+========================================= */
+
+.findings-section {
+    padding: 110px 10vw;
+}
+
+.findings-section h2 {
+    max-width: 800px;
+    margin-bottom: 45px;
+}
+
+.findings-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+
+    gap: 16px;
+}
+
+.finding-card {
+    padding: 25px;
+
+    border: 1px solid var(--border);
+    border-radius: 16px;
+
+    background: var(--white);
+}
+
+.finding-card > span {
+    width: 36px;
+    height: 36px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    margin-bottom: 15px;
+
+    border-radius: 50%;
+
+    font-weight: 900;
+}
+
+.finding-card h3 {
+    margin-bottom: 8px;
+}
+
+.finding-card p {
+    color: var(--muted);
+    font-size: 0.9rem;
+}
+
+.finding-card.success > span {
+    background: var(--green-light);
+    color: var(--green);
+}
+
+.finding-card.warning > span {
+    background: var(--yellow-light);
+    color: #956900;
+}
+
+
+/* =========================================
+   RESULTADO DO MVP
+========================================= */
+
+.result-section {
+    min-height: 620px;
+
+    display: grid;
+    grid-template-columns: 1.15fr 0.85fr;
+    align-items: center;
+
+    padding: 80px 9vw 0;
+
+    background: linear-gradient(
+        135deg,
+        #0d4388,
+        #082e63
+    );
+
+    color: var(--white);
+
+    overflow: hidden;
+}
+
+.result-content {
+    padding-bottom: 80px;
+}
+
+.result-section .tag {
+    color: var(--yellow);
+}
+
+.result-section h2 {
+    max-width: 750px;
+
+    margin-bottom: 28px;
+
+    color: var(--white);
+}
+
+.result-section p {
+    max-width: 760px;
+
+    margin-bottom: 18px;
+
+    color: #d9e6f5;
+}
+
+.result-image {
+    height: 100%;
+
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+}
+
+.result-image img {
+    width: 100%;
+    max-height: 540px;
+
+    object-fit: contain;
+
+    filter: drop-shadow(
+        0 25px 30px rgba(0, 0, 0, 0.18)
+    );
+}
+
+
+/* =========================================
+   PRÓXIMOS PASSOS
+========================================= */
+
+.next-steps {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+
+    gap: 14px;
+
+    margin-top: 38px;
+}
+
+.next-steps article {
+    padding: 20px;
+
+    border: 1px solid var(--border);
+    border-radius: 14px;
+}
+
+.next-steps span {
+    display: block;
+
+    margin-bottom: 5px;
+
+    color: var(--yellow);
+
+    font-size: 0.75rem;
+    font-weight: 800;
+}
+
+.next-steps strong {
+    color: var(--blue-dark);
+}
+
+
+/* =========================================
+   APRENDIZADOS
+========================================= */
+
+.learning-section {
+    padding: 130px 15vw;
+
+    background: var(--background);
+
+    text-align: center;
+}
+
+.learning-section h2 {
+    max-width: 800px;
+
+    margin: 0 auto 30px;
+}
+
+.learning-section > p:not(.tag) {
+    max-width: 900px;
+
+    margin: 0 auto 18px;
+
+    font-size: 1.05rem;
+}
+
+
+/* =========================================
+   FOOTER
+========================================= */
+
+.footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    padding: 35px 7vw;
+
+    background: var(--navy);
+
+    color: #b8c9df;
+}
+
+.footer .logo {
+    color: var(--white);
+}
+
+.footer p {
+    margin: 0;
+    font-size: 0.82rem;
+}
+
+
+/* =========================================
+   ANIMAÇÕES DO JAVASCRIPT
+========================================= */
+
+.reveal {
+    opacity: 0;
+
+    transform: translateY(24px);
+
+    transition:
+        opacity 0.65s ease,
+        transform 0.65s ease;
+}
+
+.reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+
+/* =========================================
+   RESPONSIVO — TABLET
+========================================= */
+
+@media (max-width: 950px) {
+
+    .nav {
+        display: none;
+    }
+
+    .hero {
+        grid-template-columns: 1fr;
+        padding-top: 70px;
+    }
+
+    .hero-content {
+        max-width: 100%;
+    }
+
+    .hero-image {
+        height: 480px;
+    }
+
+    .hero-image img {
+        max-height: 470px;
+    }
+
+    .prototype-badge {
+        right: 8%;
+        bottom: 60px;
+    }
+
+    .case-section {
+        grid-template-columns: 1fr;
+
+        gap: 15px;
+
+        padding: 85px 7vw;
+    }
+
+    .section-number {
+        font-size: 2rem;
+    }
+
+    .scope-grid,
+    .technology-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .product-decision {
+        grid-template-columns: 1fr;
+
+        gap: 35px;
+
+        padding: 85px 7vw;
+    }
+
+    .tests-section {
+        grid-template-columns: 1fr;
+
+        gap: 60px;
+
+        padding: 90px 7vw;
+    }
+
+    .evidence-section {
+        padding: 90px 7vw;
+    }
+
+    .evidence-image {
+        height: 300px;
+    }
+
+    .findings-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .result-section {
+        grid-template-columns: 1fr;
+
+        padding: 80px 7vw 0;
+    }
+
+    .result-content {
+        padding-bottom: 30px;
+    }
+
+    .result-image img {
+        max-height: 440px;
+    }
+}
+
+
+/* =========================================
+   RESPONSIVO — CELULAR
+========================================= */
+
+@media (max-width: 600px) {
+
+    .header {
+        height: 65px;
+        padding: 0 5vw;
+    }
+
+    .hero {
+        min-height: auto;
+
+        padding:
+            60px
+            6vw
+            0;
+    }
+
+    .hero h1 {
+        font-size: 4.7rem;
+    }
+
+    .hero h2 {
+        font-size: 2.1rem;
+    }
+
+    .hero-description {
+        font-size: 0.95rem;
+    }
+
+    .hero-metrics {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+
+        gap: 25px;
+    }
+
+    .hero-metric strong {
+        font-size: 1.8rem;
+    }
+
+    .hero-buttons {
+        flex-direction: column;
+    }
+
+    .button {
+        width: 100%;
+    }
+
+    .hero-image {
+        height: 370px;
+
+        margin-top: 30px;
+    }
+
+    .hero-image::before {
+        width: 330px;
+        height: 330px;
+
+        top: 25px;
+    }
+
+    .hero-image img {
+        max-height: 370px;
+    }
+
+    .prototype-badge {
+        right: 0;
+        bottom: 35px;
+
+        font-size: 0.75rem;
+    }
+
+    .intro {
+        padding: 85px 7vw;
+    }
+
+    .scope-grid,
+    .technology-grid,
+    .findings-grid,
+    .next-steps {
+        grid-template-columns: 1fr;
+    }
+
+    .logic-flow {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .logic-flow .arrow {
+        align-self: center;
+        transform: rotate(90deg);
+    }
+
+    .architecture {
+        padding: 85px 7vw;
+    }
+
+    .architecture-flow {
+        justify-content: flex-start;
+    }
+
+    .metrics-section {
+        padding: 90px 7vw;
+    }
+
+    .main-metric {
+        padding: 30px 20px;
+    }
+
+    .percentage {
+        width: 220px;
+        height: 220px;
+
+        border-width: 20px;
+
+        font-size: 3.4rem;
+    }
+
+    /* Construção e validação */
+
+    .evidence-section {
+        padding: 85px 7vw;
+    }
+
+    .evidence-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .evidence-image {
+        height: 250px;
+    }
+
+    .evidence-insight {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .findings-section {
+        padding: 85px 7vw;
+    }
+
+    .result-section {
+        padding-top: 75px;
+    }
+
+    .result-image img {
+        max-height: 390px;
+    }
+
+    .learning-section {
+        padding: 95px 7vw;
+    }
+
+    .footer {
+        align-items: flex-start;
+        flex-direction: column;
+
+        gap: 10px;
+    }
+}
+
+
+/* =========================================================
+   BARTHO — SISTEMA EDITORIAL DE PORTFÓLIO
+   Objetivo: aparência de case web profissional, não de slides.
+   - títulos centralizados
+   - texto corrido alinhado à esquerda
+   - largura e espaçamento consistentes
+   - destaques compactos
+   - componentes preservados
+========================================================= */
+
+:root {
+    --case-max: 1180px;
+    --reading-max: 860px;
+    --heading-max: 880px;
+    --section-x: clamp(24px, 6vw, 96px);
+    --section-y: clamp(64px, 7vw, 96px);
+    --title-size: clamp(2.35rem, 3.4vw, 3.25rem);
+    --subtitle-size: clamp(1.45rem, 2vw, 2rem);
+    --body-size: 1rem;
+    --radius-card: 16px;
+}
+
+/* ---------- Base editorial ---------- */
+
+body {
+    font-family: "Inter", Arial, sans-serif;
+    font-size: var(--body-size);
+    line-height: 1.68;
+    color: var(--navy);
+}
+
+h1, h2, h3, .logo {
+    font-family: "Manrope", "Inter", sans-serif;
+}
+
+p {
+    line-height: 1.72;
+}
+
+.tag {
+    font-size: .74rem;
+    font-weight: 800;
+    line-height: 1.2;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+}
+
+/* ---------- Ritmo das seções ---------- */
+
+.intro,
+.case-section,
+.architecture,
+.product-decision,
+.metrics-section,
+.tests-section,
+.evidence-section,
+.findings-section,
+.learning-section {
+    padding-top: var(--section-y);
+    padding-bottom: var(--section-y);
+    padding-left: var(--section-x);
+    padding-right: var(--section-x);
+}
+
+/* Resultado mantém composição própria */
+.result-section {
+    padding-left: var(--section-x);
+    padding-right: var(--section-x);
+    padding-top: 76px;
+}
+
+/* ---------- Cabeçalhos: o padrão visual do case ---------- */
+
+.intro > .tag,
+.section-content > .tag,
+.architecture-title > .tag,
+.product-decision .tag,
+.metrics-section > .tag,
+.tests-content > .tag,
+.evidence-header > .tag,
+.findings-section > .tag,
+.result-content > .tag,
+.learning-section > .tag {
+    display: block;
+    width: 100%;
+    margin: 0 auto 14px;
+    text-align: center;
+    font-size: .74rem;
+    font-weight: 800;
+    letter-spacing: .16em;
+    line-height: 1.2;
+    text-transform: uppercase;
+}
+
+.intro > h2,
+.section-content > h2,
+.architecture-title > h2,
+.product-decision h2,
+.metrics-section > h2,
+.tests-content > h2,
+.evidence-header > h2,
+.findings-section > h2,
+.result-content > h2,
+.learning-section > h2 {
+    width: 100%;
+    max-width: var(--heading-max);
+    margin: 0 auto 28px;
+    text-align: center;
+    font-size: var(--title-size);
+    line-height: 1.08;
+    letter-spacing: -.035em;
+}
+
+/* ---------- Texto corrido: nunca vira "slide" ---------- */
+
+.intro > p:last-child,
+.section-content > p:not(.tag),
+.architecture-title > p:not(.tag),
+.product-decision p,
+.metrics-description,
+.tests-content > p:not(.tag),
+.evidence-header > p:not(.tag),
+.result-content > p:not(.tag),
+.learning-section > p:not(.tag) {
+    text-align: left;
+    font-size: 1rem;
+    line-height: 1.72;
+}
+
+/* ---------- Visão geral ---------- */
+
+.intro {
+    text-align: left;
+}
+
+.intro > p:last-child {
+    max-width: var(--reading-max);
+    margin: 0 auto;
+}
+
+/* ---------- Problema / Hipótese / Usuário / Escopo ---------- */
+
+.case-section {
+    grid-template-columns: 1fr;
+    gap: 0;
+}
+
+.section-number {
+    display: none;
+}
+
+.section-content {
+    width: 100%;
+    max-width: var(--case-max);
+    margin: 0 auto;
+}
+
+.section-content > p:not(.tag) {
+    max-width: var(--reading-max);
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Callout do problema: destaque editorial, não segundo título */
+.problem-question {
+    max-width: var(--reading-max);
+    margin: 34px auto 0;
+    padding: 20px 24px;
+    border-left: 4px solid var(--yellow);
+    border-radius: 0 12px 12px 0;
+    background: rgba(255,255,255,.62);
+    color: var(--navy);
+    font-family: "Manrope", "Inter", sans-serif;
+    font-size: clamp(1.12rem, 1.5vw, 1.35rem);
+    font-weight: 700;
+    line-height: 1.45;
+    letter-spacing: -.015em;
+}
+
+.problem-question p {
+    margin: 0;
+}
+
+/* Fluxo da hipótese: compacto e centralizado como componente */
+.logic-flow {
+    max-width: var(--reading-max);
+    margin: 34px auto 0;
+    gap: 14px;
+}
+
+.logic-step {
+    min-height: 88px;
+    padding: 18px 20px;
+    border-radius: 14px;
+}
+
+.out-of-scope {
+    max-width: var(--reading-max);
+    margin: 28px auto 0;
+}
+
+/* ---------- Cards: mesma linguagem ---------- */
+
+.scope-grid,
+.technology-grid,
+.findings-grid,
+.next-steps,
+.evidence-grid {
+    gap: 16px;
+}
+
+.scope-card,
+.technology-card,
+.finding-card,
+.next-step,
+.evidence-card {
+    border-radius: var(--radius-card);
+}
+
+/* ---------- Arquitetura ---------- */
+
+.architecture-title {
+    max-width: var(--case-max);
+    margin: 0 auto;
+}
+
+.architecture-title > p:not(.tag) {
+    max-width: var(--reading-max);
+    margin: 0 auto;
+}
+
+.architecture-flow {
+    max-width: 980px;
+    margin: 38px auto 0;
+}
+
+.technology-grid {
+    max-width: var(--case-max);
+    margin: 40px auto 0;
+}
+
+/* ---------- Decisão de produto ---------- */
+
+.product-decision {
+    display: block;
+}
+
+.product-decision > * {
+    width: 100%;
+    max-width: var(--case-max);
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.product-decision p {
+    max-width: var(--reading-max);
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.decision-highlight {
+    max-width: var(--reading-max);
+    margin: 26px auto 0;
+    padding: 18px 22px;
+    border-radius: 14px;
+    background: rgba(255,255,255,.22);
+    text-align: left;
+    font-size: 1.18rem;
+    line-height: 1.45;
+}
+
+/* ---------- Métricas ---------- */
+
+.metrics-section {
+    text-align: left;
+}
+
+.metrics-description {
+    max-width: var(--reading-max);
+    margin: 0 auto 34px;
+}
+
+.main-metric {
+    max-width: 760px;
+    margin-left: auto;
+    margin-right: auto;
+    text-align: center;
+}
+
+.secondary-metrics {
+    max-width: var(--case-max);
+    margin: 28px auto 0;
+}
+
+/* ---------- Testes com usuários ---------- */
+
+.tests-section {
+    grid-template-columns: minmax(0, 1.15fr) minmax(300px, .72fr);
+    gap: clamp(36px, 5vw, 72px);
+    align-items: center;
+}
+
+.tests-content {
+    max-width: 720px;
+}
+
+.tests-content > .tag,
+.tests-content > h2 {
+    text-align: center;
+}
+
+.tests-content > p:not(.tag) {
+    max-width: 700px;
+    margin-left: 0;
+    margin-right: 0;
+}
+
+/* ---------- Construção e validação ---------- */
+
+.evidence-header {
+    max-width: var(--case-max);
+    margin: 0 auto 38px;
+}
+
+.evidence-header > p:not(.tag) {
+    max-width: var(--reading-max);
+    margin: 0 auto;
+}
+
+.evidence-grid,
+.evidence-insight {
+    max-width: var(--case-max);
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.evidence-image {
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+/* ---------- Resultados dos testes ---------- */
+
+.findings-section > h2 {
+    max-width: var(--heading-max);
+}
+
+.findings-grid {
+    max-width: var(--case-max);
+    margin: 34px auto 0;
+}
+
+/* ---------- Resultado do MVP ---------- */
+
+.result-section {
+    align-items: center;
+}
+
+.result-content {
+    padding-bottom: 64px;
+}
+
+.result-content > p:not(.tag) {
+    max-width: 720px;
+    margin-left: 0;
+    margin-right: 0;
+}
+
+.result-image {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transform: translateY(-72px);
+}
+
+.result-image img {
+    width: 100%;
+    max-height: 520px;
+    object-fit: contain;
+}
+
+/* ---------- Aprendizados / próximos passos ---------- */
+
+.learning-section {
+    text-align: left;
+}
+
+.learning-section > p:not(.tag) {
+    max-width: var(--reading-max);
+    margin: 0 auto 16px;
+}
+
+.next-steps {
+    max-width: var(--case-max);
+    margin: 34px auto 0;
+}
+
+/* ---------- Desktop largo: evita aparência de slide ---------- */
+
+@media (min-width: 1400px) {
+    :root {
+        --section-x: 8vw;
+        --heading-max: 840px;
+        --reading-max: 840px;
+    }
+}
+
+/* ---------- Tablet ---------- */
+
+@media (max-width: 950px) {
+    :root {
+        --section-x: 7vw;
+        --section-y: 72px;
+        --title-size: clamp(2.2rem, 5.5vw, 2.9rem);
+    }
+
+    .tests-section {
+        grid-template-columns: 1fr;
+        gap: 42px;
+    }
+
+    .tests-content {
+        max-width: var(--reading-max);
+        margin: 0 auto;
+    }
+
+    .result-image {
+        transform: translateY(-28px);
+    }
+}
+
+/* ---------- Celular ---------- */
+
+@media (max-width: 600px) {
+    :root {
+        --section-x: 6vw;
+        --section-y: 58px;
+        --title-size: clamp(2rem, 9.5vw, 2.55rem);
+    }
+
+    .intro,
+    .case-section,
+    .architecture,
+    .product-decision,
+    .metrics-section,
+    .tests-section,
+    .evidence-section,
+    .findings-section,
+    .learning-section {
+        padding-top: var(--section-y);
+        padding-bottom: var(--section-y);
+    }
+
+    .problem-question {
+        margin-top: 26px;
+        padding: 18px 18px;
+    }
+
+    .logic-flow {
+        margin-top: 28px;
+    }
+
+    .result-section {
+        padding-top: 58px;
+    }
+
+    .result-image {
+        transform: none;
+    }
+}
+
+
+/* =========================================================
+   AJUSTES DE REFINO — feedback visual 02/10
+========================================================= */
+
+/* 1. HERO — subir a imagem sem alterar o texto */
+@media (min-width: 951px) {
+    .hero-image {
+        align-items: center;
+        transform: translateY(-58px);
+    }
+
+    .hero-image img {
+        transform: translateY(-6px);
+    }
+
+    .prototype-badge {
+        transform: translateY(-58px);
+    }
+}
+
+/* 2. PROBLEMA — texto e callout no mesmo eixo */
+.problem-question {
+    width: 100%;
+    max-width: var(--reading-max) !important;
+    box-sizing: border-box;
+    margin: 30px auto 0 !important;
+    padding: 18px 22px;
+}
+
+.problem-question,
+.problem-question p {
+    text-align: left !important;
+}
+
+/* 3. HIPÓTESE — três blocos realmente centralizados */
+.logic-flow {
+    width: 100%;
+    max-width: 900px;
+    margin: 32px auto 0 !important;
+    justify-content: center !important;
+}
+
+.logic-step {
+    flex: 0 1 225px;
+}
+
+.logic-flow .arrow {
+    flex: 0 0 auto;
+}
+
+/* 4. USUÁRIO E ESCOPO — grid e bloco amarelo com a mesma largura */
+.scope-grid {
+    width: 100%;
+    max-width: var(--case-max);
+    margin: 34px auto 0 !important;
+}
+
+.out-of-scope {
+    width: 100%;
+    max-width: var(--case-max) !important;
+    box-sizing: border-box;
+    margin: 24px auto 0 !important;
+}
+
+/* 5. DECISÃO — duas conclusões, dois blocos */
+.decision-highlight {
+    max-width: var(--reading-max) !important;
+    padding: 0 !important;
+    margin: 26px auto 0 !important;
+    background: transparent !important;
+
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.decision-highlight strong {
+    display: flex !important;
+    align-items: center;
+    min-height: 76px;
+    padding: 18px 20px;
+    box-sizing: border-box;
+
+    background: rgba(255,255,255,.28);
+    border: 1px solid rgba(255,255,255,.34);
+    border-radius: 14px;
+
+    font-size: 1.08rem;
+    line-height: 1.35;
+}
+
+/* 6. TESTES — aproximar o 85% do conteúdo e reduzir vazio */
+.tests-section {
+    max-width: none;
+    grid-template-columns: minmax(0, 1fr) minmax(320px, .72fr) !important;
+    gap: 34px !important;
+    padding-left: max(var(--section-x), calc((100vw - 1500px) / 2)) !important;
+    padding-right: max(var(--section-x), calc((100vw - 1500px) / 2)) !important;
+}
+
+.tests-content {
+    max-width: 760px;
+    margin-left: auto;
+    margin-right: 0;
+}
+
+.test-result {
+    max-width: 500px;
+    margin-left: 0;
+    margin-right: auto;
+}
+
+.percentage {
+    width: 220px;
+    height: 220px;
+    margin-bottom: 18px;
+    border-width: 20px;
+    font-size: 3.65rem;
+}
+
+.test-result h3,
+.test-result p {
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+/* 7. TODOS OS GRIDS — eixo, largura e cards padronizados */
+.scope-grid,
+.technology-grid,
+.findings-grid,
+.next-steps,
+.evidence-grid {
+    width: 100%;
+    max-width: var(--case-max);
+    margin-left: auto;
+    margin-right: auto;
+    align-items: stretch;
+}
+
+.scope-card,
+.technology-card,
+.finding-card,
+.next-step,
+.evidence-card {
+    box-sizing: border-box;
+    height: 100%;
+}
+
+/* Numeração editorial fica definida diretamente no HTML. */
+
+/* Evita que o bloco de resultado pareça deslocado */
+.result-section {
+    column-gap: clamp(34px, 4vw, 70px);
+}
+
+.result-image {
+    transform: translateY(-88px);
+}
+
+/* Tablet */
+@media (max-width: 950px) {
+    .tests-section {
+        grid-template-columns: 1fr !important;
+        gap: 28px !important;
+    }
+
+    .tests-content,
+    .test-result {
+        max-width: var(--reading-max);
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .decision-highlight {
+        grid-template-columns: 1fr;
+    }
+
+    .result-image {
+        transform: translateY(-28px);
+    }
+}
+
+/* Celular */
+@media (max-width: 600px) {
+    .logic-step {
+        flex: 1 1 auto;
+    }
+
+    .decision-highlight {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .percentage {
+        width: 190px;
+        height: 190px;
+        border-width: 17px;
+        font-size: 3.1rem;
+    }
+
+    .result-image {
+        transform: none;
+    }
+}
+
+
+/* =========================================================
+   BARTHO — AJUSTES FINAIS DE LAYOUT
+   Numeração no HTML. Somente as legendas são centralizadas
+   por padrão. Exceções: Testes e Resultado do MVP.
+========================================================= */
+
+/* 1) PADRÃO: somente a legenda/tag centralizada */
+.intro > .tag,
+.section-content > .tag,
+.architecture-title > .tag,
+.product-decision .tag,
+.metrics-section > .tag,
+.tests-content > .tag,
+.evidence-header > .tag,
+.findings-section > .tag,
+.result-content > .tag,
+.learning-section > .tag {
+    display: block;
+    width: 100%;
+    margin: 0 auto 14px;
+    text-align: center !important;
+}
+
+/* Títulos voltam ao alinhamento natural à esquerda */
+.intro > h2,
+.section-content > h2,
+.architecture-title > h2,
+.product-decision h2,
+.metrics-section > h2,
+.evidence-header > h2,
+.findings-section > h2,
+.learning-section > h2 {
+    text-align: left !important;
+}
+
+/* Containers editoriais consistentes */
+.section-content,
+.architecture-title,
+.evidence-header {
+    width: 100%;
+    max-width: var(--case-max);
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* 2) PROBLEMA: pergunta exatamente no eixo do texto */
+.section-content > p:not(.tag),
+.problem-question,
+blockquote {
+    max-width: var(--reading-max);
+    margin-left: auto;
+    margin-right: auto;
+}
+
+blockquote {
+    width: 100%;
+    box-sizing: border-box;
+    margin-top: 30px;
+    padding: 18px 22px;
+    background: rgba(255,255,255,.62);
+    border-left: 4px solid var(--yellow);
+    border-radius: 0 12px 12px 0;
+    color: var(--navy);
+    font-size: clamp(1.12rem, 1.5vw, 1.35rem);
+    line-height: 1.45;
+}
+
+/* 3) HIPÓTESE: cards centralizados como conjunto, sem esticar */
+.logic-flow {
+    width: fit-content !important;
+    max-width: 100% !important;
+    margin: 32px auto 0 !important;
+    justify-content: center !important;
+}
+
+.logic-flow > div {
+    width: 225px;
+    min-width: 225px;
+    min-height: 90px;
+    justify-content: center;
+}
+
+.logic-flow .arrow {
+    flex: 0 0 auto;
+}
+
+/* 4) Cards das seções no mesmo eixo */
+.scope-grid,
+.technology-grid,
+.evidence-grid,
+.findings-grid,
+.next-steps {
+    width: 100%;
+    max-width: var(--case-max);
+    margin-left: auto;
+    margin-right: auto;
+    align-items: stretch;
+}
+
+.scope-card,
+.technology-grid article,
+.evidence-card,
+.finding-card,
+.next-steps article {
+    height: 100%;
+    box-sizing: border-box;
+}
+
+/* Escopo: bloco amarelo acompanha exatamente o grid */
+.out-of-scope {
+    width: 100%;
+    max-width: var(--case-max) !important;
+    box-sizing: border-box;
+    margin: 22px auto 0 !important;
+}
+
+/* 5) DECISÃO DE PRODUTO */
+.product-decision {
+    display: block !important;
+}
+
+.product-decision > div {
+    width: 100%;
+    max-width: var(--case-max);
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.product-decision p {
+    max-width: var(--reading-max);
+    margin-left: auto;
+    margin-right: auto;
+    text-align: left;
+}
+
+.decision-highlight {
+    width: 100%;
+    max-width: 760px !important;
+    margin: 28px auto 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
+
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 14px;
+}
+
+.decision-card {
+    min-height: 86px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 18px 22px;
+    box-sizing: border-box;
+
+    background: rgba(255,255,255,.36);
+    border: 1px solid rgba(6,31,66,.15);
+    border-radius: 14px;
+
+    color: var(--navy);
+    font-family: "Manrope", "Inter", sans-serif;
+    font-size: 1.08rem;
+    font-weight: 800;
+    line-height: 1.35;
+    text-align: center;
+
+    box-shadow: 0 8px 24px rgba(6,31,66,.08);
+}
+
+/* 6) TESTES: somente legenda + título centralizados */
+.tests-section {
+    grid-template-columns: minmax(0, 720px) minmax(280px, 380px) !important;
+    justify-content: center;
+    align-items: center;
+    gap: clamp(34px, 4vw, 58px) !important;
+}
+
+.tests-content {
+    width: 100%;
+    max-width: 720px;
+    margin: 0;
+}
+
+.tests-content > .tag,
+.tests-content > h2 {
+    text-align: center !important;
+}
+
+.tests-content > h2 {
+    max-width: 720px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.tests-content > p:not(.tag) {
+    max-width: 700px;
+    margin-left: 0;
+    margin-right: 0;
+    text-align: left !important;
+}
+
+.test-result {
+    width: 100%;
+    max-width: 380px;
+    margin: 0;
+    text-align: center;
+}
+
+.percentage {
+    width: 220px;
+    height: 220px;
+    margin: 0 auto 18px;
+    border-width: 20px;
+    font-size: 3.65rem;
+}
+
+/* 7) CONSTRUÇÃO / ACHADOS: legenda central, título à esquerda */
+.evidence-header > h2,
+.findings-section > h2 {
+    text-align: left !important;
+}
+
+.evidence-header > p:not(.tag) {
+    margin-left: 0;
+    margin-right: 0;
+}
+
+/* 8) RESULTADO DO MVP: exceção — legenda + título centralizados */
+.result-section {
+    grid-template-columns: minmax(0, 1.08fr) minmax(320px, .92fr);
+    column-gap: clamp(34px, 4vw, 70px);
+    align-items: center;
+}
+
+.result-content > .tag,
+.result-content > h2 {
+    text-align: center !important;
+}
+
+.result-content > h2 {
+    max-width: 750px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.result-content > p:not(.tag) {
+    max-width: 720px;
+    margin-left: 0;
+    margin-right: 0;
+    text-align: left !important;
+}
+
+.result-image {
+    transform: translateY(-72px);
+}
+
+/* 9) Aprendizados: legenda central, título/texto preservados */
+.learning-section {
+    text-align: left;
+}
+
+.learning-section > h2 {
+    text-align: left !important;
+}
+
+.learning-section > p:not(.tag) {
+    text-align: left;
+}
+
+/* Tablet */
+@media (max-width: 950px) {
+    .tests-section,
+    .result-section {
+        grid-template-columns: 1fr !important;
+    }
+
+    .tests-content,
+    .test-result {
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .decision-highlight {
+        max-width: 680px !important;
+    }
+
+    .result-image {
+        transform: translateY(-24px);
+    }
+}
+
+/* Celular */
+@media (max-width: 600px) {
+    .logic-flow {
+        width: 100% !important;
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .logic-flow > div {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .logic-flow .arrow {
+        align-self: center;
+        transform: rotate(90deg);
+    }
+
+    .decision-highlight {
+        grid-template-columns: 1fr !important;
+    }
+
+    .result-image {
+        transform: none;
+    }
+}
+
+
+/* =========================================================
+   AJUSTE PONTUAL — solicitado em 02/10
+   Somente: cards de limitações menores/centralizados
+   e os dois cards da decisão de produto.
+========================================================= */
+
+/* Limitações: cards menores e conjunto centralizado */
+.next-steps {
+    width: 100%;
+    max-width: 860px !important;
+    margin: 34px auto 0 !important;
+    gap: 14px !important;
+}
+
+.next-steps article {
+    min-height: 0 !important;
+    padding: 16px 18px !important;
+}
+
+/* Decisão: os dois textos dentro de cards iguais */
+.decision-highlight {
+    width: 100%;
+    max-width: 720px !important;
+    margin: 28px auto 0 !important;
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 14px !important;
+}
+
+.decision-card {
+    min-height: 72px !important;
+    padding: 15px 18px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: rgba(255,255,255,.36) !important;
+    border: 1px solid rgba(255,255,255,.52) !important;
+    border-radius: 14px !important;
+    color: var(--navy) !important;
+    font-family: "Manrope", "Inter", sans-serif !important;
+    font-size: 1rem !important;
+    font-weight: 800 !important;
+    line-height: 1.3 !important;
+    text-align: center !important;
+    box-sizing: border-box !important;
+}
+
+@media (max-width: 600px) {
+    .next-steps,
+    .decision-highlight {
+        grid-template-columns: 1fr !important;
+    }
+}

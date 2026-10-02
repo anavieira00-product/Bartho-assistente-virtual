@@ -1,0 +1,1116 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <meta
+        name="description"
+        content="Case de Produto — Bartho, assistente administrativo com IA para clínicas."
+    >
+
+    <title>Bartho | Case de Produto</title>
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="style.css">
+</head>
+
+
+<body>
+
+    <!-- ========================================
+         HEADER
+    ========================================= -->
+
+    <header class="header">
+
+        <a href="#inicio" class="logo">
+            BARTHO<span>.</span>
+        </a>
+
+        <nav class="nav">
+
+            <a href="#problema">Problema</a>
+            <a href="#produto">Produto</a>
+            <a href="#metricas">Métricas</a>
+            <a href="#testes">Testes</a>
+            <a href="#resultado">Resultados</a>
+
+        </nav>
+
+    </header>
+
+
+    <main>
+
+
+        <!-- ========================================
+             HERO
+        ========================================= -->
+
+        <section class="hero" id="inicio">
+
+            <div class="hero-content">
+
+                <p class="tag">
+                    CASE DE PRODUTO • IA APLICADA
+                </p>
+
+                <h1>Bartho</h1>
+
+                <h2>
+                    Assistente administrativo com IA para clínicas
+                </h2>
+
+                <p class="hero-description">
+                    Um protótipo funcional criado para investigar até onde
+                    um assistente conversacional consegue resolver jornadas
+                    administrativas de ponta a ponta, combinando linguagem
+                    natural, regras de negócio e execução determinística.
+                </p>
+
+
+                <!-- MÉTRICAS PRINCIPAIS -->
+
+                <div class="hero-metrics">
+
+                    <div class="hero-metric">
+                        <strong>20</strong>
+                        <span>participantes</span>
+                    </div>
+
+                    <div class="hero-metric">
+                        <strong>17/20</strong>
+                        <span>concluíram sem intervenção humana</span>
+                    </div>
+
+                    <div class="hero-metric">
+                        <strong>85%</strong>
+                        <span>resolução autônoma observada</span>
+                    </div>
+
+                </div>
+
+
+                <div class="hero-buttons">
+
+                    <!-- Depois vamos colocar o link do YouTube aqui -->
+
+                    <a
+                        href="#"
+                        class="button button-primary video-link"
+                    >
+                        ▶ Ver demonstração
+                    </a>
+
+                    <a
+                        href="#problema"
+                        class="button button-secondary"
+                    >
+                        Explorar o case ↓
+                    </a>
+
+                </div>
+
+            </div>
+
+
+            <!-- PERSONAGEM BARTHO -->
+
+            <div class="hero-image">
+
+                <img
+                    src="assets/bartho.png"
+                    alt="Bartho, assistente virtual da Clínica Bem"
+                >
+
+                <div class="prototype-badge">
+                    <span></span>
+                    Protótipo funcional
+                </div>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- ========================================
+             VISÃO GERAL
+        ========================================= -->
+
+        <section class="intro">
+
+            <p class="tag">
+                VISÃO GERAL
+            </p>
+
+            <h2>
+                Mais do que fazer uma IA conversar.
+            </h2>
+
+            <p>
+                O desafio do Bartho foi estruturar um produto capaz de
+                interpretar uma solicitação, aplicar regras de negócio
+                e concluir uma ação administrativa corretamente.
+
+                O projeto passou pela definição do problema, formulação
+                de hipóteses, priorização, definição do MVP, construção,
+                instrumentação, testes e análise dos resultados.
+            </p>
+
+        </section>
+
+
+
+        <!-- ========================================
+             01 — PROBLEMA
+        ========================================= -->
+
+        <section
+            class="case-section"
+            id="problema"
+        >
+
+            <div class="section-number">
+                01
+            </div>
+
+            <div class="section-content">
+
+                <p class="tag">
+                    PROBLEMA
+                </p>
+
+                <h2>
+                    Uma conversa simples pode esconder
+                    uma jornada complexa.
+                </h2>
+
+                <p>
+                    Agendar, remarcar ou cancelar uma consulta envolve
+                    disponibilidade, especialidade, profissional, data,
+                    horário, identificação do paciente e regras da clínica.
+                </p>
+
+                <p>
+                    Em uma conversa, essas informações podem chegar em
+                    diferentes ordens, formatos e formas de expressão.
+                    O desafio não era apenas responder ao paciente, mas
+                    compreender sua intenção e conduzir a solicitação até
+                    uma resolução.
+                </p>
+
+
+                <blockquote>
+
+                    Como permitir que o paciente resolva jornadas
+                    administrativas de forma conversacional, sem depender
+                    de um fluxo rígido e sem deixar decisões críticas sob
+                    responsabilidade do LLM?
+
+                </blockquote>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- ========================================
+             02 — HIPÓTESE
+        ========================================= -->
+
+        <section class="case-section section-light">
+
+            <div class="section-number">
+                02
+            </div>
+
+            <div class="section-content">
+
+                <p class="tag">
+                    HIPÓTESE
+                </p>
+
+                <h2>
+                    IA para compreender.
+                    Sistema para validar e executar.
+                </h2>
+
+                <p>
+                    A hipótese foi que um assistente poderia resolver
+                    jornadas administrativas de ponta a ponta ao combinar
+                    interpretação por LLM com regras determinísticas
+                    e tools responsáveis pelas ações.
+                </p>
+
+
+                <div class="logic-flow">
+
+                    <div>
+                        <span>01</span>
+                        <strong>LLM interpreta</strong>
+                    </div>
+
+                    <span class="arrow">→</span>
+
+                    <div>
+                        <span>02</span>
+                        <strong>Sistema valida</strong>
+                    </div>
+
+                    <span class="arrow">→</span>
+
+                    <div>
+                        <span>03</span>
+                        <strong>Tools executam</strong>
+                    </div>
+
+                </div>
+
+
+                <p class="highlight-text">
+                    O modelo não seria a fonte da verdade para médicos,
+                    horários, disponibilidade ou agendamentos.
+                </p>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- ========================================
+             03 — USUÁRIO E ESCOPO
+        ========================================= -->
+
+        <section
+            class="case-section"
+            id="produto"
+        >
+
+            <div class="section-number">
+                03
+            </div>
+
+            <div class="section-content">
+
+                <p class="tag">
+                    USUÁRIO E ESCOPO
+                </p>
+
+                <h2>
+                    Um MVP deliberadamente limitado.
+                </h2>
+
+                <p>
+                    Para controlar o experimento, o Bartho foi desenvolvido
+                    para a Clínica Bem, uma clínica fictícia.
+
+                    O usuário do MVP é o paciente que deseja resolver
+                    tarefas administrativas de forma conversacional,
+                    sem depender de um fluxo tradicional de atendimento.
+                </p>
+
+
+                <div class="scope-grid">
+
+
+                    <article class="scope-card">
+
+                        <span>✓</span>
+
+                        <h3>
+                            Disponibilidade
+                        </h3>
+
+                        <p>
+                            Consultar profissionais, dias e horários
+                            disponíveis.
+                        </p>
+
+                    </article>
+
+
+                    <article class="scope-card">
+
+                        <span>✓</span>
+
+                        <h3>
+                            Agendamento
+                        </h3>
+
+                        <p>
+                            Conduzir a jornada até a confirmação
+                            da consulta.
+                        </p>
+
+                    </article>
+
+
+                    <article class="scope-card">
+
+                        <span>✓</span>
+
+                        <h3>
+                            Remarcação
+                        </h3>
+
+                        <p>
+                            Localizar e alterar uma consulta existente.
+                        </p>
+
+                    </article>
+
+
+                    <article class="scope-card">
+
+                        <span>✓</span>
+
+                        <h3>
+                            Cancelamento
+                        </h3>
+
+                        <p>
+                            Localizar e cancelar uma consulta.
+                        </p>
+
+                    </article>
+
+
+                    <article class="scope-card">
+
+                        <span>✓</span>
+
+                        <h3>
+                            Informações
+                        </h3>
+
+                        <p>
+                            Responder dúvidas administrativas
+                            sobre a clínica.
+                        </p>
+
+                    </article>
+
+
+                    <article class="scope-card">
+
+                        <span>↗</span>
+
+                        <h3>
+                            Atendimento humano
+                        </h3>
+
+                        <p>
+                            Respeitar solicitações explícitas
+                            de transferência.
+                        </p>
+
+                    </article>
+
+
+                </div>
+
+
+                <div class="out-of-scope">
+
+                    <strong>Fora do escopo do MVP</strong>
+
+                    <p>
+                        Diagnóstico, prescrição, dosagem de medicamentos,
+                        orientação clínica e indicação de especialidade
+                        baseada em sintomas.
+                    </p>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- ========================================
+             04 — PRIORIZAÇÃO
+        ========================================= -->
+
+        <section class="case-section section-light">
+
+            <div class="section-number">
+                04
+            </div>
+
+            <div class="section-content">
+
+                <p class="tag">
+                    PRIORIZAÇÃO
+                </p>
+
+                <h2>
+                    Primeiro, provar que uma jornada
+                    poderia ser concluída.
+                </h2>
+
+                <p>
+                    O desenvolvimento começou pelo agendamento porque essa
+                    jornada permitia testar a hipótese central do produto:
+                    interpretar uma solicitação, coletar os dados necessários,
+                    validar disponibilidade, confirmar a decisão com o usuário
+                    e executar a ação.
+                </p>
+
+                <p>
+                    Depois dessa base, o escopo avançou para consulta de
+                    disponibilidade, remarcação, cancelamento, informações
+                    administrativas e transferência para atendimento humano.
+                </p>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- ========================================
+             05 — COMO FUNCIONA
+        ========================================= -->
+
+        <section class="architecture">
+
+            <div class="architecture-title">
+
+                <p class="tag">
+                    05 • COMO FUNCIONA
+                </p>
+
+                <h2>
+                    Uma conversa.
+                    Várias camadas.
+                </h2>
+
+                <p>
+                    A arquitetura separa interpretação probabilística
+                    de execução determinística.
+                </p>
+
+            </div>
+
+
+            <div class="architecture-flow">
+
+                <div>Paciente</div>
+
+                <span>→</span>
+
+                <div>Bartho</div>
+
+                <span>→</span>
+
+                <div>Interpretação</div>
+
+                <span>→</span>
+
+                <div>Regras</div>
+
+                <span>→</span>
+
+                <div>Tools</div>
+
+                <span>→</span>
+
+                <div>Banco</div>
+
+            </div>
+
+
+            <div class="technology-grid">
+
+
+                <article>
+
+                    <h3>Qwen</h3>
+
+                    <p>
+                        Interpretação de linguagem natural
+                        e contexto.
+                    </p>
+
+                </article>
+
+
+                <article>
+
+                    <h3>Regras de negócio</h3>
+
+                    <p>
+                        Validação antes da execução
+                        das ações.
+                    </p>
+
+                </article>
+
+
+                <article>
+
+                    <h3>Tools</h3>
+
+                    <p>
+                        Disponibilidade, agendamento,
+                        remarcação e cancelamento.
+                    </p>
+
+                </article>
+
+
+                <article>
+
+                    <h3>RAG</h3>
+
+                    <p>
+                        Recuperação de informações da
+                        base de conhecimento da clínica.
+                    </p>
+
+                </article>
+
+
+                <article>
+
+                    <h3>Memória de sessão</h3>
+
+                    <p>
+                        Preservação do contexto durante
+                        a jornada.
+                    </p>
+
+                </article>
+
+
+                <article>
+
+                    <h3>SQLite</h3>
+
+                    <p>
+                        Fonte dos dados operacionais
+                        do protótipo.
+                    </p>
+
+                </article>
+
+
+            </div>
+
+        </section>
+
+
+
+        <!-- ========================================
+             06 — DECISÃO DE PRODUTO
+        ========================================= -->
+
+        <section class="product-decision">
+
+            <div>
+
+                <p class="tag">
+                    06 • DECISÃO DE PRODUTO
+                </p>
+
+                <h2>
+                    Nem toda pergunta precisa de IA.
+                </h2>
+
+            </div>
+
+
+            <div>
+
+                <p>
+                    Durante os testes, enviar perguntas determinísticas
+                    ao LLM adicionava latência sem gerar valor proporcional.
+                </p>
+
+                <p>
+                    Informações como endereço, horário de funcionamento
+                    e preço passaram a seguir caminhos diretos, enquanto
+                    o modelo ficou concentrado nas interações em que
+                    interpretação de linguagem realmente agregava valor.
+                </p>
+
+
+                <div class="decision-highlight">
+
+                    Determinístico quando possível.
+
+                    <strong>
+                        LLM quando necessário.
+                    </strong>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- ========================================
+             07 — MÉTRICAS
+        ========================================= -->
+
+        <section
+            class="metrics-section"
+            id="metricas"
+        >
+
+            <p class="tag">
+                07 • MÉTRICAS
+            </p>
+
+            <h2>
+                Sucesso não era responder.
+                Era resolver.
+            </h2>
+
+            <p class="metrics-description">
+
+                A principal métrica definida para o Bartho foi a
+                <strong>taxa de resolução autônoma</strong>:
+                o percentual de jornadas concluídas sem necessidade
+                de intervenção humana.
+
+            </p>
+
+
+            <div class="main-metric">
+
+                <span>
+                    MÉTRICA PRINCIPAL
+                </span>
+
+                <strong>
+                    Taxa de resolução autônoma
+                </strong>
+
+            </div>
+
+
+            <div class="secondary-metrics">
+
+                <span>
+                    Conclusão por jornada
+                </span>
+
+                <span>
+                    Transferência para humano
+                </span>
+
+                <span>
+                    Abandono
+                </span>
+
+                <span>
+                    Motivo de falha
+                </span>
+
+                <span>
+                    Uso de tools e RAG
+                </span>
+
+                <span>
+                    Latência do LLM
+                </span>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- ========================================
+             08 — TESTES
+        ========================================= -->
+
+        <section
+            class="tests-section"
+            id="testes"
+        >
+
+            <div class="tests-content">
+
+                <p class="tag">
+                    08 • TESTES COM USUÁRIOS
+                </p>
+
+                <h2>
+                    O protótipo foi colocado
+                    à prova.
+                </h2>
+
+                <p>
+                    Além dos testes funcionais realizados durante o
+                    desenvolvimento, o Bartho passou por uma rodada
+                    exploratória com 20 participantes.
+                </p>
+
+                <p>
+                    O objetivo era observar quantas pessoas conseguiriam
+                    concluir a jornada utilizando apenas o assistente,
+                    sem necessidade de intervenção humana.
+                </p>
+
+                <p>
+                    Os testes também exploraram disponibilidade,
+                    agendamento, remarcação, cancelamento,
+                    informações administrativas, contexto,
+                    RAG e situações fora do escopo.
+                </p>
+
+            </div>
+
+
+            <div class="test-result">
+
+                <div class="percentage">
+                    85%
+                </div>
+
+                <strong>
+                    de resolução autônoma observada
+                </strong>
+
+                <p>
+                    <b>17 de 20 participantes</b>
+                    concluíram a jornada sem intervenção humana.
+                </p>
+
+                <small>
+                    Resultado observado nesta rodada exploratória
+                    do MVP. A amostra não representa desempenho
+                    generalizável em produção.
+                </small>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- ========================================
+             RESULTADOS DOS TESTES
+        ========================================= -->
+
+        <section class="findings-section">
+
+            <p class="tag">
+                O QUE OS TESTES REVELARAM
+            </p>
+
+            <h2>
+                Sucesso e falha geraram aprendizado.
+            </h2>
+
+
+            <div class="findings-grid">
+
+
+                <article class="finding-card success">
+
+                    <span>✓</span>
+
+                    <h3>
+                        Resolução
+                    </h3>
+
+                    <p>
+                        17 participantes concluíram a jornada
+                        sem intervenção humana.
+                    </p>
+
+                </article>
+
+
+                <article class="finding-card success">
+
+                    <span>✓</span>
+
+                    <h3>
+                        Jornadas principais
+                    </h3>
+
+                    <p>
+                        O protótipo conseguiu executar fluxos
+                        administrativos de ponta a ponta.
+                    </p>
+
+                </article>
+
+
+                <article class="finding-card warning">
+
+                    <span>!</span>
+
+                    <h3>
+                        Latência
+                    </h3>
+
+                    <p>
+                        Algumas chamadas locais ao modelo levaram
+                        aproximadamente 20–30 segundos.
+                    </p>
+
+                </article>
+
+
+                <article class="finding-card warning">
+
+                    <span>!</span>
+
+                    <h3>
+                        Contexto
+                    </h3>
+
+                    <p>
+                        Conversas mais complexas mostraram oportunidades
+                        de melhoria na manutenção e utilização do contexto.
+                    </p>
+
+                </article>
+
+
+            </div>
+
+        </section>
+
+
+
+        <!-- ========================================
+             09 — RESULTADO DO MVP
+        ========================================= -->
+
+        <section
+            class="result-section"
+            id="resultado"
+        >
+
+            <div class="result-content">
+
+                <p class="tag">
+                    09 • RESULTADO DO MVP
+                </p>
+
+                <h2>
+                    Uma hipótese transformada
+                    em produto testável.
+                </h2>
+
+                <p>
+                    O Bartho encerrou o ciclo como um protótipo funcional
+                    capaz de consultar informações e executar jornadas
+                    administrativas em uma clínica fictícia.
+                </p>
+
+                <p>
+                    Na rodada exploratória com usuários,
+                    <strong>
+                        17 de 20 participantes concluíram a jornada
+                        sem intervenção humana
+                    </strong>,
+                    resultando em uma taxa de resolução autônoma
+                    observada de <strong>85%</strong>.
+                </p>
+
+                <p>
+                    Os casos não concluídos e as limitações identificadas
+                    durante os testes também ajudaram a definir onde
+                    investigar a próxima evolução do produto.
+                </p>
+
+
+                <!-- LINK DO YOUTUBE DEPOIS -->
+
+                <a
+                    href="#"
+                    class="button button-light video-link"
+                >
+                    ▶ Assistir à demonstração
+                </a>
+
+            </div>
+
+
+            <div class="result-image">
+
+                <img
+                    src="assets/bartho.png"
+                    alt="Bartho"
+                >
+
+            </div>
+
+        </section>
+
+
+
+        <!-- ========================================
+             10 — LIMITAÇÕES
+        ========================================= -->
+
+        <section class="case-section">
+
+            <div class="section-number">
+                10
+            </div>
+
+            <div class="section-content">
+
+                <p class="tag">
+                    LIMITAÇÕES E PRÓXIMOS PASSOS
+                </p>
+
+                <h2>
+                    O resultado do teste define
+                    o que vem depois.
+                </h2>
+
+                <p>
+                    O protótipo ainda apresenta limitações de latência
+                    e oportunidades de melhoria na manutenção de contexto
+                    em cenários mais complexos.
+                </p>
+
+                <p>
+                    Antes de ampliar o número de funcionalidades,
+                    a próxima etapa seria aprofundar a análise dos casos
+                    que não conseguiram concluir a jornada e identificar
+                    exatamente onde o fluxo se rompeu.
+                </p>
+
+
+                <div class="next-steps">
+
+                    <article>
+
+                        <span>01</span>
+
+                        <strong>
+                            Analisar falhas por etapa
+                        </strong>
+
+                    </article>
+
+
+                    <article>
+
+                        <span>02</span>
+
+                        <strong>
+                            Reduzir latência percebida
+                        </strong>
+
+                    </article>
+
+
+                    <article>
+
+                        <span>03</span>
+
+                        <strong>
+                            Refinar contexto de sessão
+                        </strong>
+
+                    </article>
+
+
+                    <article>
+
+                        <span>04</span>
+
+                        <strong>
+                            Ampliar testes antes de escalar
+                        </strong>
+
+                    </article>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- ========================================
+             11 — APRENDIZADOS
+        ========================================= -->
+
+        <section class="learning-section">
+
+            <p class="tag">
+                11 • APRENDIZADOS
+            </p>
+
+            <h2>
+                LLM não substitui
+                desenho de produto.
+            </h2>
+
+            <p>
+                O principal aprendizado do Bartho foi entender a importância
+                de separar o que pode ser probabilístico do que precisa
+                ser previsível.
+            </p>
+
+            <p>
+                Quanto mais crítica a ação, maior a necessidade de combinar
+                interpretação por IA com regras claras, validação e
+                execução controlada.
+            </p>
+
+            <p>
+                O projeto começou como um estudo sobre LLMs e agentes
+                e evoluiu para um exercício completo de Produto:
+                <strong>
+                    definir problema, formular hipótese, limitar escopo,
+                    priorizar, construir, medir, testar e aprender.
+                </strong>
+            </p>
+
+        </section>
+
+
+    </main>
+
+
+
+    <!-- ========================================
+         FOOTER
+    ========================================= -->
+
+    <footer class="footer">
+
+        <a href="#inicio" class="logo">
+            BARTHO<span>.</span>
+        </a>
+
+        <p>
+            Case de Produto • Protótipo funcional
+        </p>
+
+    </footer>
+
+
+    <!-- JAVASCRIPT -->
+
+    <script src="script.js"></script>
+
+</body>
+
+</html>
