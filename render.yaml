@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: bartho-assistente-virtual
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn api:app --bind 0.0.0.0:$PORT --workers 1 --timeout 120
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: BARTHO_MODO_WEB
+        value: "1"
+      - key: BARTHO_ALLOWED_ORIGIN
+        value: "https://anavieira00-product.github.io"
+      - key: OLLAMA_BASE_URL
+        value: "https://ollama.com"
+      - key: OLLAMA_MODEL
+        value: "qwen3:1.7b"
