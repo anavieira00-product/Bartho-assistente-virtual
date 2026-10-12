@@ -14,4 +14,8 @@ services:
       - key: OLLAMA_BASE_URL
         value: "https://ollama.com"
       - key: OLLAMA_MODEL
-        value: "qwen3:1.7b"
+        value: "gpt-oss:20b"
+      - key: OLLAMA_API_KEY
+        sync: false
+      - key: BARTHO_SECRET_KEY
+        generateValue: true
