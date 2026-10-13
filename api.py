@@ -263,8 +263,22 @@ def mensagem():
             if resultado is not None:
                 return resultado
 
+        # Mantém a escolha de especialidade como continuação contextual:
+        # após perguntar quais especialidades existem, uma resposta como
+        # "Cardiologia" deve avançar para a jornada, não cair no fluxo legado.
+        pergunta_especialidades = any(
+            termo in texto_normalizado
+            for termo in (
+                "quais especialidades",
+                "especialidades atende",
+                "especialidades tem",
+                "que especialidades",
+            )
+        )
         resposta_faq = faq(texto)
         if resposta_faq:
+            if pergunta_especialidades:
+                sessao["etapa"] = "especialidade"
             return responder(resposta_faq)
 
     captura = StringIO()
