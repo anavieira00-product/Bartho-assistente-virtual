@@ -1,7 +1,6 @@
 import time
 import re
 import json
-import os
 import urllib.request
 
 from teste_llm import interpretar_mensagem
@@ -2459,25 +2458,20 @@ def oferecer_atendimento_humano(mensagem):
 def _chamar_qwen_texto_sem_metricas(prompt):
     """Chamada local ao Qwen para geração curta/controlada."""
     try:
-        base_url = os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434").rstrip("/")
-        url = os.environ.get("OLLAMA_URL", base_url + "/api/generate")
         dados = {
-            "model": os.environ.get("OLLAMA_MODEL", "qwen3:1.7b"),
+            "model": "qwen3:1.7b",
             "prompt": prompt,
             "stream": False
         }
-        headers = {"Content-Type": "application/json"}
-        if os.environ.get("OLLAMA_API_KEY"):
-            headers["Authorization"] = "Bearer " + os.environ["OLLAMA_API_KEY"]
 
         requisicao = urllib.request.Request(
-            url,
+            "http://localhost:11434/api/generate",
             data=json.dumps(dados).encode("utf-8"),
-            headers=headers,
+            headers={"Content-Type": "application/json"},
             method="POST"
         )
 
-        with urllib.request.urlopen(requisicao, timeout=int(os.environ.get("OLLAMA_TIMEOUT_SECONDS", "90"))) as resposta:
+        with urllib.request.urlopen(requisicao, timeout=120) as resposta:
             resultado = json.loads(resposta.read().decode("utf-8"))
 
         return resultado.get("response", "").strip()
@@ -3415,6 +3409,32 @@ def responder_pergunta_convenio(mensagem):
 def responder_informacao_clinica_rapida(mensagem):
     """FAQ administrativa objetiva resolvida por banco/regras, antes do LLM."""
     texto = normalizar_mensagem_curta(mensagem)
+
+    # Horário de funcionamento: responder por regra determinística.
+    # Isso evita depender do classificador ou do RAG para um fato fixo da base.
+    termos_horario_funcionamento = (
+        "horario de funcionamento", "horarios de funcionamento",
+        "que horas funciona", "qual horario funciona", "qual o horario",
+        "horario da clinica", "horarios da clinica",
+        "que horas abre", "a que horas abre", "que horas fecha",
+        "a que horas fecha", "abre que horas", "fecha que horas",
+        "funciona ate que horas", "funciona de que horas",
+        "qual o horario de atendimento", "horario de atendimento",
+        "horarios de atendimento", "quando a clinica funciona",
+    )
+    pergunta_sobre_horario = any(t in texto for t in termos_horario_funcionamento)
+    if pergunta_sobre_horario:
+        contexto_horario = ler_secoes_base(["HORÁRIO DE FUNCIONAMENTO"])
+        if contexto_horario:
+            resposta = (
+                "A Clínica Bem funciona de segunda a sexta-feira, das 08h às 18h. "
+                "O último horário de consulta começa às 17h."
+            )
+            print(f"\nBartho: {resposta}")
+            registrar_contexto("horario_funcionamento", mensagem, resposta)
+            registrar_resolucao("informacao_clinica")
+            return True
+        return False
 
     termos_lista_especialidades = (
         "quais especialidades", "que especialidades", "especialidades atendem",
