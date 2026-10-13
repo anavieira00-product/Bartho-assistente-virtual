@@ -79,10 +79,49 @@ def faq(texto):
 def responder(texto):
     return jsonify({"resposta": texto, "aguardando_resposta": False})
 
-def iniciar_agendamento(sessao):
+def iniciar_agendamento(sessao, texto=""):
+    """Inicia o agendamento aproveitando os dados já presentes na mensagem."""
     sessao.clear()
-    sessao.update({"etapa": "especialidade"})
-    return responder("Claro! Qual especialidade você procura: Cardiologia, Dermatologia ou Clínica Geral?")
+    especialidade = extrair_especialidade(texto)
+
+    if especialidade:
+        medicos = consultar_medicos_por_especialidade(especialidade)
+        if medicos:
+            medico = medicos[0]
+            dias = consultar_dias_medico(medico)
+            nomes_dias = [
+                "segunda-feira", "terça-feira", "quarta-feira",
+                "quinta-feira", "sexta-feira", "sábado", "domingo"
+            ]
+            dias_texto = ", ".join(
+                nomes_dias[d] for d in dias if isinstance(d, int) and 0 <= d < 7
+            )
+            sessao.update({
+                "etapa": "confirmar_horarios",
+                "especialidade": especialidade,
+                "medico": medico,
+                "dias_atendimento": dias,
+            })
+            nome = {
+                "cardiologia": "Cardiologia",
+                "dermatologia": "Dermatologia",
+                "clinica_geral": "Clínica Geral",
+            }[especialidade]
+            if dias_texto:
+                return responder(
+                    f"Temos atendimento de {nome} com {medico}. "
+                    f"Os dias de atendimento são: {dias_texto}. "
+                    "Quer consultar os horários disponíveis?"
+                )
+            return responder(
+                f"Temos atendimento de {nome} com {medico}. "
+                "Quer consultar os horários disponíveis?"
+            )
+
+    sessao["etapa"] = "especialidade"
+    return responder(
+        "Claro! Qual especialidade você procura: Cardiologia, Dermatologia ou Clínica Geral?"
+    )
 
 def processar_fluxo(texto, sessao):
     etapa = sessao.get("etapa")
@@ -113,7 +152,23 @@ def processar_fluxo(texto, sessao):
         if not sim(texto):
             return responder("Você gostaria de consultar os horários disponíveis? Responda sim ou não.")
         sessao["etapa"] = "data"
-        return responder("Para qual dia você gostaria de consultar os horários? Pode dizer hoje, amanhã ou um dia da semana.")
+        dias = sessao.get("dias_atendimento") or consultar_dias_medico(sessao["medico"])
+        nomes_dias = [
+            "segunda-feira", "terça-feira", "quarta-feira",
+            "quinta-feira", "sexta-feira", "sábado", "domingo"
+        ]
+        dias_texto = ", ".join(
+            nomes_dias[d] for d in dias if isinstance(d, int) and 0 <= d < 7
+        )
+        if dias_texto:
+            return responder(
+                f"Qual data você prefere? {sessao['medico']} atende em {dias_texto}. "
+                "Você pode informar uma data ou um desses dias."
+            )
+        return responder(
+            "Para qual dia você gostaria de consultar os horários? "
+            "Pode dizer hoje, amanhã ou um dia da semana."
+        )
 
     if etapa == "data":
         data = resolver_data(texto)
@@ -197,8 +252,11 @@ def mensagem():
             return responder("Olá! 👋 Sou o Bartho, assistente virtual da Clínica Bem. Como posso ajudar?")
 
         # Um pedido explícito novo inicia fluxo novo.
-        if any(x in normalizar(texto) for x in ("quero agendar", "agendar consulta", "marcar consulta", "quero marcar")):
-            return iniciar_agendamento(sessao)
+        if any(x in texto_normalizado for x in (
+            "quero agendar", "agendar consulta", "marcar consulta", "quero marcar",
+            "gostaria de agendar", "gostaria de marcar", "preciso agendar", "preciso marcar"
+        )):
+            return iniciar_agendamento(sessao, texto)
 
         if sessao.get("etapa"):
             resultado = processar_fluxo(texto, sessao)
