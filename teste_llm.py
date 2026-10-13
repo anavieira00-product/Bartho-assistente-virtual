@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import urllib.request
 
 
@@ -12,6 +13,85 @@ import urllib.request
 OLLAMA_BASE_URL = os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434").rstrip("/")
 OLLAMA_URL = os.environ.get("OLLAMA_URL", OLLAMA_BASE_URL + "/api/generate")
 MODELO = os.environ.get("OLLAMA_MODEL", "qwen3:1.7b")
+
+
+
+
+def _interpretacao_basica(mensagem):
+    """
+    Plano de contingência para mensagens simples quando o modelo
+    retornar uma resposta vazia ou fora do formato JSON esperado.
+    Não consulta disponibilidade nem executa agendamentos.
+    """
+    texto = (mensagem or "").strip().lower()
+    texto_sem_acentos = (
+        texto.replace("á", "a").replace("à", "a").replace("ã", "a")
+        .replace("â", "a").replace("é", "e").replace("ê", "e")
+        .replace("í", "i").replace("ó", "o").replace("ô", "o")
+        .replace("õ", "o").replace("ú", "u").replace("ç", "c")
+    )
+
+    saudacao = bool(re.search(
+        r"\b(oi|ola|bom dia|boa tarde|boa noite|e ai)\b",
+        texto_sem_acentos
+    ))
+
+    intencao = "nao_informado"
+    if any(x in texto_sem_acentos for x in ("cancelar", "cancela", "desmarcar", "desmarca")):
+        intencao = "cancelar"
+    elif any(x in texto_sem_acentos for x in ("remarcar", "reagendar", "mudar minha consulta", "trocar meu horario")):
+        intencao = "remarcar"
+    elif any(x in texto_sem_acentos for x in ("agendar", "marcar consulta", "quero marcar", "quero uma consulta", "marque uma consulta")):
+        intencao = "agendar"
+    elif any(x in texto_sem_acentos for x in ("quais especialidades", "especialidades a clinica", "especialidades voces", "que especialidades")):
+        intencao = "listar_especialidades"
+    elif any(x in texto_sem_acentos for x in ("tem horario", "disponibilidade", "horarios disponiveis", "tem vaga")):
+        intencao = "consultar"
+
+    especialidades = []
+    if any(x in texto_sem_acentos for x in ("cardiologia", "cardiologista", "medico do coracao", "medico de coracao")):
+        especialidades.append("cardiologia")
+    if "dermatologia" in texto_sem_acentos or "dermatologista" in texto_sem_acentos:
+        especialidades.append("dermatologia")
+    if any(x in texto_sem_acentos for x in ("clinica geral", "clinico geral")):
+        especialidades.append("clinica_geral")
+
+    if intencao == "nao_informado" and especialidades:
+        if any(x in texto_sem_acentos for x in ("tem ", "vocês têm", "voces tem", "quem atende", "qual medico")):
+            intencao = "consultar_medico"
+
+    data = "nao_informado"
+    for palavra in ("amanha", "hoje", "segunda", "terca", "quarta", "quinta", "sexta", "sabado", "domingo"):
+        if re.search(r"\b" + palavra + r"\b", texto_sem_acentos):
+            data = "terça" if palavra == "terca" else palavra
+            break
+
+    horario = "nao_informado"
+    hora_match = re.search(r"\b(?:as\s*)?(\d{1,2})(?:h|:\s*(\d{2}))\b", texto_sem_acentos)
+    if hora_match:
+        hora = int(hora_match.group(1))
+        minuto = int(hora_match.group(2) or 0)
+        if 0 <= hora <= 23 and 0 <= minuto <= 59:
+            horario = f"{hora:02d}:{minuto:02d}"
+    elif "manha" in texto_sem_acentos:
+        horario = "manha"
+    elif "tarde" in texto_sem_acentos or "depois do almoco" in texto_sem_acentos:
+        horario = "tarde"
+
+    consultas = [
+        {"especialidade": esp, "data": data, "horario": horario}
+        for esp in especialidades
+    ]
+
+    return {
+        "saudacao": saudacao,
+        "intencao": intencao,
+        "especialidade": especialidades[0] if especialidades else "nao_informado",
+        "especialidades": especialidades,
+        "consultas": consultas,
+        "data": data,
+        "horario": horario,
+    }
 
 
 # ==================================================
@@ -957,24 +1037,28 @@ estruturado definido pelo sistema.
             f"Erro: {erro}"
         )
 
-    resposta_modelo = resultado.get(
-        "response",
-        ""
-    )
+    # A API pode retornar um erro estruturado ou uma resposta vazia.
+    # Nesse caso, usamos uma interpretação simples de contingência
+    # para não interromper mensagens básicas, como "cardiologista".
+    if isinstance(resultado, dict) and resultado.get("error"):
+        resposta_modelo = ""
+    else:
+        resposta_modelo = resultado.get("response", "") if isinstance(resultado, dict) else ""
+
+    resposta_modelo = resposta_modelo.strip() if isinstance(resposta_modelo, str) else ""
+
+    # Alguns modelos podem envolver o JSON em cercas Markdown.
+    if resposta_modelo.startswith("```"):
+        resposta_modelo = re.sub(r"^```(?:json)?\s*|\s*```$", "", resposta_modelo, flags=re.IGNORECASE).strip()
 
     try:
+        if not resposta_modelo:
+            raise json.JSONDecodeError("Resposta vazia", resposta_modelo, 0)
 
-        interpretacao = json.loads(
-            resposta_modelo
-        )
+        interpretacao = json.loads(resposta_modelo)
 
-    except json.JSONDecodeError:
-
-        raise RuntimeError(
-            "O Qwen retornou uma resposta "
-            "que não pôde ser interpretada "
-            "como JSON."
-        )
+    except (json.JSONDecodeError, TypeError):
+        interpretacao = _interpretacao_basica(mensagem)
 
     # ==================================================
     # NORMALIZAÇÃO DE SEGURANÇA
