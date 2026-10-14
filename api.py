@@ -5,6 +5,7 @@ import unicodedata
 import json
 import sqlite3
 from datetime import datetime, timedelta, date
+from zoneinfo import ZoneInfo
 from difflib import SequenceMatcher
 from pathlib import Path
 from threading import RLock
@@ -26,6 +27,8 @@ from agenda import (
 from calendario import resolver_data, consultorio_aberto, horario_permitido
 
 app = Flask(__name__)
+# Identificador exclusivo desta versão para confirmar o deploy no Render.
+API_VERSION = "2026-10-14-fluxo-conversa-v5"
 app.secret_key = os.environ.get("BARTHO_SECRET_KEY") or os.urandom(32).hex()
 origem_permitida = os.environ.get("BARTHO_ALLOWED_ORIGIN", "https://anavieira00-product.github.io")
 CORS(app, resources={r"/*": {"origins": origem_permitida}})
@@ -35,6 +38,11 @@ CORS(app, resources={r"/*": {"origins": origem_permitida}})
 # (por exemplo, /var/data/bartho_sessions.db).
 _SESSION_DB = os.environ.get("BARTHO_SESSION_DB_PATH", "bartho_sessions.db")
 _LOCK = RLock()
+_FUSO_LOCAL = ZoneInfo("America/Sao_Paulo")
+
+def agora_local():
+    """Retorna a hora local de Belo Horizonte, independentemente do fuso do servidor."""
+    return datetime.now(_FUSO_LOCAL).replace(tzinfo=None)
 
 
 def _conectar_sessoes():
@@ -149,19 +157,21 @@ def identificar_dia_semana(texto):
     return None, None
 
 def pergunta_especialidades(texto):
+    """Reconhece perguntas naturais e variações simples sobre especialidades."""
     t = normalizar(texto)
-    menciona_especialidade = "especialidade" in t or "especialidades" in t
+    menciona = any(p in t for p in ("especialidade", "especialidades", "especialida", "especialid"))
     pergunta = any(x in t for x in (
-        "quais", "qual", "que", "tem", "atende", "atendem", "oferece", "oferecem",
-        "voces tem", "voces atendem", "a clinica tem"
+        "qual", "quais", "que", "tem", "atende", "atendem", "oferece", "oferecem",
+        "voces tem", "voces atendem", "a clinica tem", "a clinica atende", "trabalha com"
     ))
-    return menciona_especialidade and pergunta
+    return menciona and pergunta or t in {"especialidades", "quais especialidades", "qual especialidade"}
 
 def pergunta_horarios(texto):
     t = normalizar(texto)
     return any(x in t for x in (
-        "quais horarios", "qual horario", "horarios disponiveis", "consultar horarios",
-        "ver horarios", "tem horario", "tem horarios", "quero horario", "quero horarios"
+        "quais horarios", "qual horario", "horarios disponiveis", "horario disponivel",
+        "consultar horarios", "ver horarios", "tem horario", "tem horarios", "quero horario",
+        "quero horarios", "horarios voces tem", "quais sao os horarios", "quais os horarios"
     ))
 
 def identificar_convenio(texto):
@@ -171,7 +181,7 @@ def identificar_convenio(texto):
         return "Unimed"
     if "bradesco" in t:
         return "Bradesco Saúde"
-    if "sulamerica" in t:
+    if "sulamerica" in t or "sul america" in t or "sul-america" in t:
         return "SulAmérica"
     return None
 
@@ -182,21 +192,21 @@ def resolver_data_flexivel(texto):
     m = re.search(r"\b(\d{1,2})[/-](\d{1,2})(?:[/-](\d{2,4}))?\b", t)
     if m:
         dia, mes, ano = int(m.group(1)), int(m.group(2)), m.group(3)
-        ano = int(ano) if ano else datetime.now().year
+        ano = int(ano) if ano else agora_local().year
         if ano < 100:
             ano += 2000
         try:
             data = date(ano, mes, dia)
-            hoje = date.today()
+            hoje = agora_local().date()
             if not m.group(3) and data < hoje:
                 data = date(ano + 1, mes, dia)
             return datetime.combine(data, datetime.min.time())
         except ValueError:
             return None
     if "hoje" in t:
-        return datetime.now()
+        return agora_local()
     if "amanha" in t:
-        return datetime.now() + timedelta(days=1)
+        return agora_local() + timedelta(days=1)
     dia_nome, _ = identificar_dia_semana(texto)
     if dia_nome:
         try:
@@ -204,7 +214,11 @@ def resolver_data_flexivel(texto):
         except Exception:
             return None
     try:
-        return resolver_data(texto)
+        # Usa o relógio local do Brasil, não o fuso UTC padrão do Render.
+        try:
+            return resolver_data(texto, data_atual=agora_local())
+        except TypeError:
+            return resolver_data(texto)
     except Exception:
         return None
 
@@ -227,11 +241,12 @@ def pedido_novo_horario(texto):
 
 
 def extrair_horario(texto):
+    """Extrai hora sem confundir os números de uma data (16/10/2026) com 16:00."""
     t = normalizar(texto)
-    m = re.search(r"\b([01]?\d|2[0-3])(?::([0-5]\d)|h(?:([0-5]\d))?)\b", t)
+    sem_datas = re.sub(r"\b\d{1,2}[/-]\d{1,2}(?:[/-]\d{2,4})?\b", " ", t)
+    m = re.search(r"\b([01]?\d|2[0-3])(?::([0-5]\d)|h(?:([0-5]\d))?)\b", sem_datas)
     if not m:
-        # Em frases, permite "às 18" / "as 18" sem confundir datas.
-        m = re.search(r"\bas\s+([01]?\d|2[0-3])\b", t)
+        m = re.search(r"\bas\s+([01]?\d|2[0-3])\b", sem_datas)
         if not m:
             return None
         hora, minuto = int(m.group(1)), 0
@@ -241,39 +256,57 @@ def extrair_horario(texto):
 
 def faq(texto, convenio=None):
     t = normalizar(texto)
-    # Perguntas de cobertura precisam ser tratadas antes da FAQ genérica de convênios.
-    # Não afirmamos cobertura garantida: ela depende das regras do plano do paciente.
+
+    # Intenção específica sobre exames/cirurgias tem prioridade sobre a palavra "cobre".
+    # Assim, "cobre exame de sangue?" nunca recebe uma resposta afirmativa sobre consultas.
+    pergunta_exame = any(x in t for x in (
+        "exame de sangue", "exames de sangue", "fazer exame", "faz exame",
+        "realiza exame", "realiza exames", "coleta de sangue", "exame laboratorial",
+        "exames laboratoriais", "cirurgia", "cirurgias"
+    ))
+    if pergunta_exame:
+        return ("Não. A Clínica Bem não realiza exames de sangue nem cirurgias. "
+                "A clínica atende consultas médicas nas especialidades Cardiologia, Dermatologia e Clínica Geral.")
+
+    # Responde sobre cobertura de consulta com a regra de negócio da Clínica Bem:
+    # consultas são atendidas pelos convênios aceitos; exames e cirurgias não são realizados.
     pergunta_cobertura = any(x in t for x in (
         "cobre consulta", "cobre consultas", "cobre a consulta", "cobertura da consulta",
-        "meu plano cobre", "plano cobre consulta", "consulta e coberta",
-        "atende consulta pelo convenio", "posso consultar pelo convenio",
-        "cobre", "tem cobertura", "e coberto", "e coberta", "cobertura"
+        "meu plano cobre", "plano cobre consulta", "consulta e coberta", "consulta cobre",
+        "atende consulta pelo convenio", "posso consultar pelo convenio", "tem cobertura",
+        "e coberto", "e coberta", "cobre"
     )) and any(x in t for x in ("consulta", "plano", "convenio", "cobre", "cobertura", "coberto", "coberta"))
     if pergunta_cobertura:
         plano = convenio or identificar_convenio(texto)
         if plano:
-            return (f"A Clínica Bem aceita {plano}, mas não consigo confirmar apenas por aqui se a sua consulta "
-                    f"está coberta. Isso depende do produto contratado, da rede credenciada e das regras do plano. "
-                    f"Confirme a cobertura da consulta diretamente com a {plano} antes do atendimento.")
-        return ("A Clínica Bem aceita Unimed, Bradesco Saúde e SulAmérica, mas não consigo confirmar a cobertura "
-                "sem saber qual é o seu plano. A cobertura depende do produto contratado e das regras da operadora.")
+            return (f"Sim, a Clínica Bem atende consultas por {plano}. A clínica não realiza exames de sangue "
+                    "nem cirurgias.")
+        return ("Sim, a Clínica Bem atende consultas por Unimed, Bradesco Saúde e SulAmérica. "
+                "A clínica não realiza exames de sangue nem cirurgias.")
+
+    # Informar o convênio não deve gerar uma repetição da FAQ de planos aceitos.
+    convenio_mencionado = identificar_convenio(texto)
+    if convenio_mencionado and any(x in t for x in ("tenho", "uso", "meu convenio", "meu plano", "sou cliente", "sou da")):
+        return (f"Entendi, você tem {convenio_mencionado}. A Clínica Bem atende consultas por esse convênio, "
+                "conforme as condições do plano. Quer saber sobre uma consulta ou agendar um horário?")
+
     if any(x in t for x in ("endereco", "onde fica", "localizacao", "local da clinica", "como chegar")):
         return "O endereço cadastrado da Clínica Bem é Avenida x, 1, Belo Horizonte/MG."
-    if any(x in t for x in ("quanto custa", "qual o valor", "valor da consulta", "preco da consulta", "preço da consulta")):
+    if any(x in t for x in ("quanto custa", "qual o valor", "valor da consulta", "preco da consulta")):
         return "A consulta particular custa R$ 70,00."
-    if any(x in t for x in ("unimed", "bradesco saude", "sulamerica", "convenio", "convênio", "planos aceitos")):
-        return "A Clínica Bem aceita Unimed, Bradesco Saúde e SulAmérica. A cobertura depende das condições do plano contratado."
+    if any(x in t for x in ("convenio", "planos aceitos", "quais planos", "quais convenios", "aceita plano", "aceita convenio")):
+        return "A Clínica Bem aceita Unimed, Bradesco Saúde e SulAmérica para consultas, conforme as condições de cada plano. A clínica não realiza exames de sangue nem cirurgias."
     if pergunta_especialidades(texto):
         return "A Clínica Bem atende Cardiologia, Dermatologia e Clínica Geral."
-    if any(x in t for x in ("horario de funcionamento", "que horas abre", "que horas fecha", "funcionamento da clinica", "horario da clinica")):
-        return "A Clínica Bem funciona de segunda a sexta-feira, das 08:00 às 18:00. O último horário de consulta começa às 17:00."
+    if any(x in t for x in ("horario de funcionamento", "que horas abre", "que horas fecha", "funcionamento da clinica", "horario da clinica", "que horas funciona")):
+        return "A Clínica Bem funciona de segunda a sexta-feira, das 08:00 às 18:00. O último horário para iniciar uma consulta é às 17:00."
     if any(x in t for x in ("documentos", "o que levar", "preciso levar", "documento para consulta")):
         return "Leve um documento oficial com foto. Se utilizar convênio, leve também a carteirinha, quando aplicável. Menores de idade devem estar acompanhados por responsável."
     if any(x in t for x in ("atraso", "chegar atrasado", "tolerancia")):
         return "A tolerância para atrasos é de até 15 minutos."
-    if any(x in t for x in ("cirurgia", "exame de sangue", "exames", "emergencia", "emergência")):
-        if "emergencia" in t:
-            return "A Clínica Bem não presta atendimento de emergência. Em caso de urgência, procure um serviço de urgência/emergência."
+    if "emergencia" in t:
+        return "A Clínica Bem não presta atendimento de emergência. Em caso de urgência, procure um serviço de urgência/emergência."
+    if any(x in t for x in ("cirurgia", "exame de sangue", "exames")):
         return "A Clínica Bem realiza consultas médicas nas especialidades cadastradas, mas não realiza cirurgias nem exames de sangue."
     return None
 
@@ -328,88 +361,87 @@ def processar_fluxo(texto, sessao):
     etapa = sessao.get("etapa")
     t = normalizar(texto)
 
-    # Permite perguntas informativas durante uma jornada sem perder a etapa.
+    if etapa in {"data", "horario"} and nao(texto):
+        sessao.clear()
+        return responder("Tudo bem, encerrei esta consulta de horários. Nenhum agendamento foi confirmado. Se quiser, podemos começar novamente.")
+
+    # Perguntas informativas têm prioridade e não devem cair no fluxo legado.
     resposta_faq = faq(texto, sessao.get("convenio_informado"))
     if resposta_faq:
-        # Se a pessoa pergunta pelas especialidades durante outro fluxo, passamos
-        # para a escolha de especialidade em vez de deixar uma etapa antiga ativa.
         if pergunta_especialidades(texto):
             sessao["etapa"] = "especialidade"
         return responder(resposta_faq)
 
-    if etapa == "especialidade":
-        esp = extrair_especialidade(texto)
+    # A pessoa pode mudar a especialidade ou perguntar pelos horários usando linguagem natural.
+    esp = extrair_especialidade(texto)
+    if etapa in {"especialidade", "apos_lista_especialidades"}:
         if not esp:
-            return responder("Não identifiquei a especialidade. Você procura Cardiologia, Dermatologia ou Clínica Geral?")
+            return responder("Qual especialidade você procura: Cardiologia, Dermatologia ou Clínica Geral?")
         medicos = consultar_medicos_por_especialidade(esp)
         if not medicos:
-            return responder("Não encontrei médico cadastrado para essa especialidade. Posso ajudar com outra especialidade?")
-        sessao["especialidade"] = esp
-        sessao["medico"] = medicos[0]
-        sessao["etapa"] = "confirmar_horarios"
-        nome = {"cardiologia":"Cardiologia","dermatologia":"Dermatologia","clinica_geral":"Clínica Geral"}[esp]
-        return responder(f"Temos atendimento de {nome}. Quer consultar os horários disponíveis?")
+            return responder("Não encontrei médico cadastrado para essa especialidade. Posso ajudar com outra?")
+        medico = medicos[0]
+        dias = consultar_dias_medico(medico)
+        sessao.update({"especialidade": esp, "medico": medico, "dias_atendimento": dias, "etapa": "confirmar_horarios"})
+        nomes = ["segunda-feira", "terça-feira", "quarta-feira", "quinta-feira", "sexta-feira", "sábado", "domingo"]
+        dias_txt = ", ".join(nomes[d] for d in dias if isinstance(d, int) and 0 <= d < 7)
+        nome = {"cardiologia":"Cardiologia", "dermatologia":"Dermatologia", "clinica_geral":"Clínica Geral"}[esp]
+        return responder(f"Temos atendimento de {nome} com {medico}. Os dias de atendimento são: {dias_txt}. Você pode pedir os horários ou informar diretamente o dia desejado.")
 
     if etapa == "confirmar_horarios":
-        if pergunta_horarios(texto):
+        if pergunta_horarios(texto) or sim(texto):
             sessao["etapa"] = "data"
             dias = sessao.get("dias_atendimento") or consultar_dias_medico(sessao["medico"])
-            nomes_dias = ["segunda-feira", "terça-feira", "quarta-feira", "quinta-feira", "sexta-feira", "sábado", "domingo"]
-            dias_texto = ", ".join(nomes_dias[d] for d in dias if isinstance(d, int) and 0 <= d < 7)
-            return responder(f"Claro! Para consultar a disponibilidade de {sessao.get('especialidade', '').replace('_', ' ').title()}, informe a data ou um dia de atendimento. {sessao['medico']} atende em {dias_texto}.")
+            nomes = ["segunda-feira", "terça-feira", "quarta-feira", "quinta-feira", "sexta-feira", "sábado", "domingo"]
+            dias_txt = ", ".join(nomes[d] for d in dias if isinstance(d, int) and 0 <= d < 7)
+            return responder(f"Para consultar horários, informe a data desejada. {sessao['medico']} atende em {dias_txt}. Você pode dizer, por exemplo, ‘quinta-feira’ ou ‘16/10/2026’.")
         dia_nome, dia_numero = identificar_dia_semana(texto)
-        if dia_nome:
-            dias_medico = sessao.get("dias_atendimento") or consultar_dias_medico(sessao["medico"])
-            if dia_numero not in dias_medico:
-                sessao["etapa"] = "data"
-                nomes_dias = ["segunda-feira", "terça-feira", "quarta-feira", "quinta-feira", "sexta-feira", "sábado", "domingo"]
-                dias_texto = ", ".join(nomes_dias[d] for d in dias_medico if isinstance(d, int) and 0 <= d < 7)
-                return responder(f"A Dra. {sessao.get('medico', '').replace('Dra. ', '')} não atende na {dia_nome}. Os dias de atendimento são: {dias_texto}. Qual desses dias você prefere?")
-            # O usuário já indicou o dia desejado; não precisa responder sim/não.
+        data_candidata = resolver_data_flexivel(texto) if pedido_nova_data(texto) else None
+        # Aceita uma data numérica diretamente depois da escolha da especialidade
+        # (ex.: "quero dia 20/10"), sem exigir primeiro um "sim".
+        if dia_nome or data_candidata:
             sessao["etapa"] = "data"
-            return processar_fluxo(dia_nome, sessao)
+            return processar_fluxo(texto, sessao)
         if nao(texto):
             sessao.clear()
             return responder("Tudo bem! Quando quiser, posso ajudar a consultar os horários ou agendar uma consulta.")
-        if not sim(texto):
-            return responder("Claro! Você pode me dizer diretamente o dia que prefere, como terça ou quinta, ou responder sim para consultar os horários disponíveis.")
-        sessao["etapa"] = "data"
-        dias = sessao.get("dias_atendimento") or consultar_dias_medico(sessao["medico"])
-        nomes_dias = [
-            "segunda-feira", "terça-feira", "quarta-feira",
-            "quinta-feira", "sexta-feira", "sábado", "domingo"
-        ]
-        dias_texto = ", ".join(
-            nomes_dias[d] for d in dias if isinstance(d, int) and 0 <= d < 7
-        )
-        if dias_texto:
-            return responder(
-                f"Qual data você prefere? {sessao['medico']} atende em {dias_texto}. "
-                "Você pode informar uma data ou um desses dias."
-            )
-        return responder(
-            "Para qual dia você gostaria de consultar os horários? "
-            "Pode dizer hoje, amanhã ou um dia da semana."
-        )
+        return responder("Você pode informar diretamente o dia ou a data desejada, ou pedir para consultar os horários disponíveis.")
 
     if etapa == "data":
-        dia_nome, _ = identificar_dia_semana(texto)
+        # Se a pessoa informar data e horário juntos (ex.: “sexta às 18”), valida ambos.
+        hora_pedida_na_mensagem = extrair_horario(texto)
+        if hora_pedida_na_mensagem and pedido_nova_data(texto):
+            sessao["horario_solicitado"] = hora_pedida_na_mensagem
         data = resolver_data_flexivel(texto)
         if data is None:
-            return responder("Não consegui identificar a data. Informe hoje, amanhã ou um dia da semana, como terça-feira.")
+            return responder("Não consegui identificar a data. Informe uma data como 16/10/2026, 16/10, hoje, amanhã ou um dia da semana.")
+        agora = agora_local()
+        data_dia = data.date()
+        hoje = agora.date()
+        if data_dia < hoje:
+            return responder("Essa data já passou. Informe uma data futura, por favor.")
         if not consultorio_aberto(data):
             return responder("A clínica funciona de segunda a sexta-feira. Escolha um dia útil, por favor.")
-        medico = sessao["medico"]
-        dias = consultar_dias_medico(medico)
+        medico = sessao.get("medico")
+        if not medico:
+            sessao["etapa"] = "especialidade"
+            return responder("Antes de consultar os horários, qual especialidade você procura: Cardiologia, Dermatologia ou Clínica Geral?")
+        dias = sessao.get("dias_atendimento") or consultar_dias_medico(medico)
         if data.weekday() not in dias:
-            dias_nomes = ["segunda-feira","terça-feira","quarta-feira","quinta-feira","sexta-feira","sábado","domingo"]
-            disponiveis = ", ".join(dias_nomes[d] for d in dias)
-            return responder(f"{medico} não atende nesse dia. Os dias de atendimento são: {disponiveis}. Qual desses dias prefere?")
+            dias_nomes = ["segunda-feira", "terça-feira", "quarta-feira", "quinta-feira", "sexta-feira", "sábado", "domingo"]
+            disponiveis = ", ".join(dias_nomes[d] for d in dias if isinstance(d, int) and 0 <= d < 7)
+            return responder(f"{medico} não atende nessa data. Os dias de atendimento são: {disponiveis}. Informe outra data, por favor.")
+        # Último horário de consulta começa às 17h. Não oferecer horários passados em uma data de hoje.
+        if data_dia == hoje and agora.hour >= 17:
+            return responder("Hoje não há mais horários para iniciar consultas. A clínica funciona até 18:00, e o último horário de consulta começa às 17:00. Informe outra data, por favor.")
         sessao["data"] = data.strftime("%Y-%m-%d")
         livres = consultar_horarios_livres(medico, sessao["data"])
         livres = [h for h in livres if horario_permitido(h)]
+        if data_dia == hoje:
+            livres = [h for h in livres if int(h.split(":")[0]) > agora.hour or (int(h.split(":")[0]) == agora.hour and int(h.split(":")[1]) > agora.minute)]
         if not livres:
-            return responder("Não encontrei horários livres nessa data. Informe outro dia, por favor.")
+            sessao.pop("horarios_livres", None)
+            return responder("Não encontrei horários futuros disponíveis nessa data. Informe outra data, por favor.")
         sessao["horarios_livres"] = livres
         sessao["etapa"] = "horario"
         solicitado = sessao.pop("horario_solicitado", None)
@@ -418,29 +450,27 @@ def processar_fluxo(texto, sessao):
                 sessao["horario"] = solicitado
                 sessao["etapa"] = "paciente"
                 return responder(f"O horário das {solicitado} está disponível. Qual é o nome completo do paciente?")
-            return responder(f"Às {solicitado}, não há horário disponível nessa data. Os horários disponíveis são: " + ", ".join(livres) + ". Qual horário você prefere?")
+            return responder(f"Às {solicitado}, não há horário disponível nessa data. Os horários disponíveis são: {', '.join(livres)}. Qual horário você prefere?")
         return responder("Horários disponíveis: " + ", ".join(livres) + ". Qual horário você prefere?")
 
     if etapa == "horario":
+        # Permite trocar a data mesmo quando o bot estava aguardando a escolha de horário.
         if pedido_nova_data(texto):
-            horario_pedido = extrair_horario(texto)
-            if horario_pedido:
-                sessao["horario_solicitado"] = horario_pedido
+            hora_pedida = extrair_horario(texto)
+            if hora_pedida:
+                sessao["horario_solicitado"] = hora_pedida
             sessao.pop("data", None)
             sessao.pop("horario", None)
+            sessao.pop("horarios_livres", None)
             sessao["etapa"] = "data"
             return processar_fluxo(texto, sessao)
-        horario = t.replace("h", ":00") if re.fullmatch(r"\d{1,2}h", t) else t
-        # Aceita "18"/"18h" e frases como "sexta às 18" sem perder o pedido de trocar a data.
-        m_hora = re.search(r"\b([01]?\d|2[0-3])(?::([0-5]\d)|h(?:([0-5]\d))?)?\b", t)
-        if m_hora and not re.fullmatch(r"\d{1,2}(?::\d{2})?", horario):
-            hora = int(m_hora.group(1))
-            minuto = int(m_hora.group(2) or m_hora.group(3) or 0)
-            horario = f"{hora:02d}:{minuto:02d}"
-        if re.fullmatch(r"\d{1,2}", horario):
-            horario = horario.zfill(2) + ":00"
+        horario = extrair_horario(texto)
+        if not horario and re.fullmatch(r"\d{1,2}", t):
+            horario = f"{int(t):02d}:00"
+        if not horario:
+            return responder("Informe um horário da lista ou uma nova data para consultar outros horários.")
         if horario not in sessao.get("horarios_livres", []):
-            return responder("Esse horário não está na lista de disponíveis. Escolha um destes: " + ", ".join(sessao.get("horarios_livres", [])) + ".")
+            return responder("Esse horário não está disponível. Escolha um destes: " + ", ".join(sessao.get("horarios_livres", [])) + ". Você também pode informar outra data, como 16/10/2026, ou cancelar.")
         sessao["horario"] = horario
         sessao["etapa"] = "paciente"
         return responder("Perfeito. Qual é o nome completo do paciente?")
@@ -450,29 +480,31 @@ def processar_fluxo(texto, sessao):
         if len(nome) < 2 or nome.isdigit():
             return responder("Pode informar o nome do paciente, por favor?")
         sessao["paciente"] = nome
-        data_br = sessao["data"]
-        from datetime import datetime
-        data_br = datetime.strptime(data_br, "%Y-%m-%d").strftime("%d/%m/%Y")
+        data_br = datetime.strptime(sessao["data"], "%Y-%m-%d").strftime("%d/%m/%Y")
         sessao["etapa"] = "confirmacao"
         return responder(f"Confirme os dados: {sessao['especialidade'].replace('_',' ').title()}, {data_br} às {sessao['horario']}, paciente {nome}. Deseja confirmar?")
 
     if etapa == "confirmacao":
         if nao(texto):
             sessao.clear()
-            return responder("Tudo bem, não fiz o agendamento. Se quiser, podemos começar novamente.")
+            return responder("Tudo bem, não fiz o agendamento. Nenhuma consulta foi marcada. Se quiser, podemos começar novamente.")
         if not sim(texto):
-            return responder("Para concluir, responda sim para confirmar ou não para cancelar.")
+            return responder("Para concluir, responda ‘sim’ para confirmar ou ‘não’ para desistir do agendamento.")
         sucesso = criar_agendamento(sessao["paciente"], sessao["medico"], sessao["data"], sessao["horario"])
         if sucesso:
-            from datetime import datetime
             data_br = datetime.strptime(sessao["data"], "%Y-%m-%d").strftime("%d/%m/%Y")
             resultado = f"Consulta agendada com sucesso! {data_br} às {sessao['horario']}, com {sessao['medico']}."
         else:
-            resultado = "Esse horário acabou de ficar indisponível. Vamos escolher outro horário."
+            resultado = "Esse horário acabou de ficar indisponível. Vamos escolher outra data."
         sessao.clear()
         return responder(resultado)
 
     return None
+
+@app.get("/version")
+def version():
+    return jsonify({"assistente": "Bartho", "api_version": API_VERSION})
+
 
 @app.get("/health")
 def health():
@@ -497,6 +529,31 @@ def mensagem():
         if pedido_cancelamento(texto):
             sessao.clear()
             return responder("Tudo bem, cancelei esta solicitação. Nenhum agendamento foi confirmado. Se quiser, podemos começar novamente.")
+
+        # Trata convênio informado em mensagem isolada antes de qualquer fluxo legado.
+        # Isso evita que "tenho Sul América" caia no processar_mensagem antigo.
+        convenio_mencionado = identificar_convenio(texto)
+        mensagem_informa_convenio = any(x in texto_normalizado for x in (
+            "tenho", "uso", "sou cliente", "meu convenio", "meu plano", "atendo pelo",
+            "sou da", "estou na", "estou com"
+        ))
+        pergunta_sobre_cobertura = (
+            "consulta" in texto_normalizado and any(x in texto_normalizado for x in (
+                "cobre", "cobertura", "coberto", "coberta", "plano"
+            ))
+        )
+        if convenio_mencionado and mensagem_informa_convenio:
+            sessao["convenio_informado"] = convenio_mencionado
+            if pergunta_sobre_cobertura:
+                return responder(
+                    f"Sim, a Clínica Bem atende consultas por {convenio_mencionado}. "
+                    "A clínica não realiza exames de sangue nem cirurgias."
+                )
+            return responder(
+                f"Entendi, você tem {convenio_mencionado}. A Clínica Bem atende consultas por esse convênio. "
+                "A clínica não realiza exames de sangue nem cirurgias. "
+                "Quer saber sobre a cobertura de uma consulta ou deseja agendar?"
+            )
 
         if texto_normalizado in {"oi", "ola", "opa", "bom dia", "boa tarde", "boa noite", "oi tudo bem", "ola tudo bem"} and not sessao.get("etapa"):
             return responder("Olá! 👋 Sou o Bartho, assistente virtual da Clínica Bem. Como posso ajudar?")
@@ -524,33 +581,40 @@ def mensagem():
         mensagem_informa_convenio = any(x in texto_normalizado for x in (
             "tenho", "uso", "sou cliente", "meu convenio", "meu plano", "atendo pelo"
         ))
-        if convenio_mencionado and mensagem_informa_convenio and not any(
+        pergunta_sobre_cobertura = any(x in texto_normalizado for x in (
+            "cobre consulta", "cobre a consulta", "consulta cobre", "cobertura", "meu plano cobre", "cobre"
+        )) and "consulta" in texto_normalizado
+        if convenio_mencionado and mensagem_informa_convenio and not pergunta_sobre_cobertura and not any(
             x in texto_normalizado for x in ("quais convenios", "quais planos", "aceita convenio", "aceita convenios")
         ):
             sessao["convenio_informado"] = convenio_mencionado
             return responder(
-                f"Entendi, você tem {convenio_mencionado}. A Clínica Bem aceita esse convênio. "
-                "A cobertura de uma consulta depende do produto contratado e das regras da operadora. "
+                f"Entendi, você tem {convenio_mencionado}. A Clínica Bem atende consultas por esse convênio, "
+                "conforme as condições do plano. A clínica não realiza exames de sangue nem cirurgias. "
                 "Você quer saber sobre a cobertura ou deseja agendar uma consulta?"
             )
+        elif convenio_mencionado and mensagem_informa_convenio:
+            # Guarda o plano e deixa a FAQ responder à pergunta que veio na mesma mensagem.
+            sessao["convenio_informado"] = convenio_mencionado
+
+        # FAQ e escolha de especialidade funcionam mesmo fora do roteiro exato.
+        # Se a mensagem trouxer uma especialidade, inicia/retoma a escolha sem exigir
+        # a frase literal “Quero agendar uma consulta”.
+        resposta_faq = faq(texto, sessao.get("convenio_informado"))
+        if resposta_faq:
+            if pergunta_especialidades(texto):
+                sessao["etapa"] = "especialidade"
+            return responder(resposta_faq)
 
         if sessao.get("etapa"):
             resultado = processar_fluxo(texto, sessao)
             if resultado is not None:
                 return resultado
 
-        resposta_faq = faq(texto, sessao.get("convenio_informado"))
-        if resposta_faq:
-            # Registra somente a pergunta sobre especialidades como contexto de
-            # continuação. As demais perguntas frequentes continuam sem alterar o fluxo.
-            if pergunta_especialidades(texto):
-                # Uma resposta simples como "Dermatologia" na mensagem seguinte
-                # inicia/continua a escolha de especialidade, sem cair no fluxo legado.
-                sessao["etapa"] = "apos_lista_especialidades"
-            return responder(resposta_faq)
+        especialidade = extrair_especialidade(texto)
+        if especialidade:
+            return iniciar_agendamento(sessao, texto)
 
-        # Evita enviar perguntas simples de agenda para o fluxo legado de terminal,
-        # que não consegue manter perguntas interativas entre requisições HTTP.
         if pergunta_horarios(texto):
             sessao["etapa"] = "especialidade"
             return responder("Claro! Para consultar os horários, primeiro me diga qual especialidade você procura: Cardiologia, Dermatologia ou Clínica Geral.")
