@@ -22,13 +22,13 @@ from agenda import (
     criar_banco, cadastrar_medicos, cadastrar_dias_atendimento,
     consultar_especialidades, consultar_medicos_por_especialidade,
     consultar_dias_medico, verificar_atendimento, consultar_horarios_livres,
-    criar_agendamento,
+    criar_agendamento, buscar_agendamentos, cancelar_agendamento, remarcar_agendamento,
 )
 from calendario import resolver_data, consultorio_aberto, horario_permitido
 
 app = Flask(__name__)
 # Identificador exclusivo desta versão para confirmar o deploy no Render.
-API_VERSION = "2026-10-14-fluxo-conversa-v5"
+API_VERSION = "2026-10-14-conversa-contexto-v6"
 app.secret_key = os.environ.get("BARTHO_SECRET_KEY") or os.urandom(32).hex()
 origem_permitida = os.environ.get("BARTHO_ALLOWED_ORIGIN", "https://anavieira00-product.github.io")
 CORS(app, resources={r"/*": {"origins": origem_permitida}})
@@ -225,7 +225,27 @@ def resolver_data_flexivel(texto):
 
 def pedido_cancelamento(texto):
     t = normalizar(texto)
-    return t in {"cancela", "cancelar", "cancela isso", "cancelar agendamento", "cancela consulta", "quero cancelar", "desisto", "desistir"}
+    if any(x in t for x in ("nao cancelar", "nao quero cancelar", "nao cancele")):
+        return False
+    return t in {"cancela", "cancelar", "cancela isso", "cancelar agendamento", "cancela consulta", "quero cancelar", "quero cancelar consulta", "cancelar minha consulta", "cancelar meu agendamento", "desisto", "desistir"} or any(
+        x in t for x in ("quero cancelar a consulta", "quero cancelar meu", "cancelar a consulta", "cancelar meu agendamento")
+    )
+
+def pedido_remarcacao(texto):
+    t = normalizar(texto)
+    return any(x in t for x in ("remarcar", "remarcacao", "reagendar", "reagendamento", "mudar minha consulta", "alterar minha consulta", "trocar a data da consulta"))
+
+def mensagem_de_agradecimento(texto):
+    t = normalizar(texto)
+    return t in {"obrigado", "obrigada", "muito obrigado", "muito obrigada", "valeu", "ok obrigada", "ok obrigado", "ta bom obrigada", "ta bom obrigado", "ok valeu"} or t.startswith(("obrigada ", "obrigado ", "muito obrigada", "muito obrigado"))
+
+def mensagem_encerramento(texto):
+    t = normalizar(texto)
+    return t in {"somente isso", "so isso", "so isso mesmo", "era so isso", "e so isso", "nao obrigada", "nao obrigado", "nao, obrigada", "nao, obrigado", "tchau", "ate logo", "ate mais", "pode encerrar", "pode finalizar"}
+
+def eh_pergunta_sobre_consulta_curta(texto):
+    t = normalizar(texto)
+    return t in {"e consulta", "e a consulta", "consulta", "e para consulta", "e consulta medica", "e a consulta medica", "consulta medica"}
 
 
 def pedido_nova_data(texto):
@@ -256,6 +276,13 @@ def extrair_horario(texto):
 
 def faq(texto, convenio=None):
     t = normalizar(texto)
+
+    # Follow-up curto após falar de exames/convênio: "e consulta?".
+    if eh_pergunta_sobre_consulta_curta(texto):
+        plano = convenio or identificar_convenio(texto)
+        if plano:
+            return f"Sim, a Clínica Bem atende consultas por {plano}. A clínica não realiza exames de sangue nem cirurgias."
+        return "Sim, a Clínica Bem atende consultas por Unimed, Bradesco Saúde e SulAmérica. A cobertura depende das condições do convênio informado. A clínica não realiza exames de sangue nem cirurgias."
 
     # Intenção específica sobre exames/cirurgias tem prioridade sobre a palavra "cobre".
     # Assim, "cobre exame de sangue?" nunca recebe uma resposta afirmativa sobre consultas.
@@ -357,9 +384,160 @@ def iniciar_agendamento(sessao, texto=""):
         "Claro! Qual especialidade você procura: Cardiologia, Dermatologia ou Clínica Geral?"
     )
 
+def _guardar_agendamento_escolhido(sessao, agendamento):
+    # agenda.buscar_agendamentos retorna (id, medico, especialidade, data, horario)
+    sessao["agendamento_id"] = agendamento[0]
+    sessao["medico"] = agendamento[1]
+    sessao["especialidade"] = agendamento[2]
+    sessao["data_anterior"] = agendamento[3]
+    sessao["horario_anterior"] = agendamento[4]
+
+
+def _iniciar_acao_agendamento(sessao, acao):
+    sessao.clear()
+    sessao["acao_agendamento"] = acao
+    sessao["etapa"] = "cancelamento_nome" if acao == "cancelar" else "remarcar_nome"
+    verbo = "cancelar" if acao == "cancelar" else "remarcar"
+    return responder(f"Claro, posso ajudar a {verbo} uma consulta. Qual é o nome completo do paciente usado no agendamento?")
+
+
 def processar_fluxo(texto, sessao):
     etapa = sessao.get("etapa")
     t = normalizar(texto)
+
+    # Fluxo de cancelamento de uma consulta já marcada.
+    if etapa == "cancelamento_nome":
+        nome = texto.strip()
+        if len(nome) < 2 or nome.isdigit():
+            return responder("Informe o nome completo do paciente para localizar o agendamento.")
+        consultas = buscar_agendamentos(nome)
+        if not consultas:
+            return responder("Não encontrei agendamentos com esse nome. Confira se informou o mesmo nome usado na marcação ou diga 'encerrar' para sair.")
+        if len(consultas) == 1:
+            _guardar_agendamento_escolhido(sessao, consultas[0])
+            sessao["etapa"] = "cancelamento_confirmar"
+            data_br = str(consultas[0][3])
+            try:
+                data_br = datetime.strptime(data_br, "%Y-%m-%d").strftime("%d/%m/%Y")
+            except ValueError:
+                pass
+            return responder(f"Encontrei a consulta de {data_br} às {consultas[0][4]} com {consultas[0][1]}. Confirma o cancelamento? Responda sim ou não.")
+        sessao["agendamentos_encontrados"] = [list(a) for a in consultas]
+        sessao["etapa"] = "cancelamento_escolher"
+        linhas = []
+        for i, a in enumerate(consultas, 1):
+            try:
+                data_br = datetime.strptime(str(a[3]), "%Y-%m-%d").strftime("%d/%m/%Y")
+            except ValueError:
+                data_br = str(a[3])
+            linhas.append(f"{i}. {data_br} às {a[4]} com {a[1]}")
+        return responder("Encontrei mais de uma consulta:\n" + "\n".join(linhas) + "\nQual deseja cancelar? Informe o número.")
+
+    if etapa == "cancelamento_escolher":
+        consultas = sessao.get("agendamentos_encontrados", [])
+        if not t.isdigit() or not (1 <= int(t) <= len(consultas)):
+            return responder("Informe o número da consulta que deseja cancelar.")
+        ag = consultas[int(t) - 1]
+        _guardar_agendamento_escolhido(sessao, ag)
+        sessao["etapa"] = "cancelamento_confirmar"
+        try:
+            data_br = datetime.strptime(str(ag[3]), "%Y-%m-%d").strftime("%d/%m/%Y")
+        except ValueError:
+            data_br = str(ag[3])
+        return responder(f"Confirma o cancelamento da consulta de {data_br} às {ag[4]} com {ag[1]}? Responda sim ou não.")
+
+    if etapa == "cancelamento_confirmar":
+        if nao(texto):
+            sessao.clear()
+            return responder("Tudo bem, mantive sua consulta. Posso ajudar com mais alguma coisa?")
+        if not sim(texto):
+            return responder("Deseja mesmo cancelar essa consulta? Responda sim ou não.")
+        sucesso = cancelar_agendamento(sessao.get("agendamento_id"))
+        sessao.clear()
+        return responder("Pronto, sua consulta foi cancelada." if sucesso else "Não consegui cancelar essa consulta. Ela pode já ter sido alterada. Posso ajudar com mais alguma coisa?")
+
+    # Fluxo de remarcação de uma consulta já marcada.
+    if etapa == "remarcar_nome":
+        nome = texto.strip()
+        if len(nome) < 2 or nome.isdigit():
+            return responder("Informe o nome completo do paciente para localizar o agendamento.")
+        consultas = buscar_agendamentos(nome)
+        if not consultas:
+            return responder("Não encontrei agendamentos com esse nome. Confira se informou o mesmo nome usado na marcação ou diga 'encerrar' para sair.")
+        if len(consultas) == 1:
+            _guardar_agendamento_escolhido(sessao, consultas[0])
+            sessao["etapa"] = "remarcar_data"
+            return responder("Encontrei sua consulta. Qual nova data você prefere? Pode informar, por exemplo, 20/10/2026 ou sexta-feira.")
+        sessao["agendamentos_encontrados"] = [list(a) for a in consultas]
+        sessao["etapa"] = "remarcar_escolher"
+        linhas = []
+        for i, a in enumerate(consultas, 1):
+            try:
+                data_br = datetime.strptime(str(a[3]), "%Y-%m-%d").strftime("%d/%m/%Y")
+            except ValueError:
+                data_br = str(a[3])
+            linhas.append(f"{i}. {data_br} às {a[4]} com {a[1]}")
+        return responder("Encontrei mais de uma consulta:\n" + "\n".join(linhas) + "\nQual deseja remarcar? Informe o número.")
+
+    if etapa == "remarcar_escolher":
+        consultas = sessao.get("agendamentos_encontrados", [])
+        if not t.isdigit() or not (1 <= int(t) <= len(consultas)):
+            return responder("Informe o número da consulta que deseja remarcar.")
+        _guardar_agendamento_escolhido(sessao, consultas[int(t) - 1])
+        sessao["etapa"] = "remarcar_data"
+        return responder("Qual nova data você prefere? Pode informar, por exemplo, 20/10/2026 ou sexta-feira.")
+
+    if etapa == "remarcar_data":
+        nova_data = resolver_data_flexivel(texto)
+        if nova_data is None:
+            return responder("Não consegui identificar a data. Informe uma data como 20/10/2026, 20/10, amanhã ou um dia da semana.")
+        hoje = agora_local().date()
+        if nova_data.date() < hoje:
+            return responder("Essa data já passou. Informe uma data futura.")
+        if not consultorio_aberto(nova_data):
+            return responder("A clínica atende de segunda a sexta-feira. Informe uma data em dia útil.")
+        dias = consultar_dias_medico(sessao["medico"])
+        if nova_data.weekday() not in dias:
+            nomes = ["segunda-feira", "terça-feira", "quarta-feira", "quinta-feira", "sexta-feira", "sábado", "domingo"]
+            dias_txt = ", ".join(nomes[d] for d in dias if isinstance(d, int) and 0 <= d < 7)
+            return responder(f"{sessao['medico']} não atende nessa data. Os dias de atendimento são: {dias_txt}. Informe outra data.")
+        if nova_data.date() == hoje and agora_local().hour >= 17:
+            return responder("Hoje não há mais horários para iniciar consultas. Informe outra data, por favor.")
+        livres = consultar_horarios_livres(sessao["medico"], nova_data.strftime("%Y-%m-%d"))
+        livres = [h for h in livres if horario_permitido(h)]
+        if nova_data.date() == hoje:
+            agora = agora_local()
+            livres = [h for h in livres if (int(h[:2]), int(h[3:])) > (agora.hour, agora.minute)]
+        if not livres:
+            return responder("Não encontrei horários disponíveis nessa data. Informe outra data.")
+        sessao["nova_data"] = nova_data.strftime("%Y-%m-%d")
+        sessao["horarios_livres_remarcacao"] = livres
+        sessao["etapa"] = "remarcar_horario"
+        return responder("Horários disponíveis: " + ", ".join(livres) + ". Qual horário prefere?")
+
+    if etapa == "remarcar_horario":
+        if pedido_nova_data(texto):
+            sessao["etapa"] = "remarcar_data"
+            return processar_fluxo(texto, sessao)
+        horario = extrair_horario(texto)
+        if not horario and re.fullmatch(r"\d{1,2}", t):
+            horario = f"{int(t):02d}:00"
+        if horario not in sessao.get("horarios_livres_remarcacao", []):
+            return responder("Esse horário não está disponível. Escolha um dos horários listados ou informe outra data.")
+        sessao["novo_horario"] = horario
+        sessao["etapa"] = "remarcar_confirmar"
+        data_br = datetime.strptime(sessao["nova_data"], "%Y-%m-%d").strftime("%d/%m/%Y")
+        return responder(f"Confirma a remarcação para {data_br} às {horario}? Responda sim ou não.")
+
+    if etapa == "remarcar_confirmar":
+        if nao(texto):
+            sessao.clear()
+            return responder("Tudo bem, não alterei sua consulta. Posso ajudar com mais alguma coisa?")
+        if not sim(texto):
+            return responder("Confirma a remarcação? Responda sim ou não.")
+        sucesso = remarcar_agendamento(sessao["agendamento_id"], sessao["nova_data"], sessao["novo_horario"])
+        sessao.clear()
+        return responder("Pronto, sua consulta foi remarcada com sucesso." if sucesso else "Não consegui remarcar para esse horário. Ele pode ter ficado indisponível. Posso consultar outra opção.")
 
     if etapa in {"data", "horario"} and nao(texto):
         sessao.clear()
@@ -524,11 +702,26 @@ def mensagem():
         sessao = _carregar_sessao(conversa_id)
         texto_normalizado = normalizar(texto)
 
-        # Cancelamento pode ser solicitado em qualquer etapa, inclusive quando o sistema
-        # está aguardando um horário ou uma confirmação.
-        if pedido_cancelamento(texto):
+        # Despedidas e agradecimentos são intenções próprias, não devem cair no fluxo legado.
+        if mensagem_encerramento(texto):
             sessao.clear()
-            return responder("Tudo bem, cancelei esta solicitação. Nenhum agendamento foi confirmado. Se quiser, podemos começar novamente.")
+            return responder("Tudo bem! Obrigado por conversar com a Clínica Bem. Quando precisar, estarei por aqui. Até a próxima!")
+        if mensagem_de_agradecimento(texto):
+            return responder("Por nada! Posso ajudar com mais alguma coisa?")
+
+        # Remarcar/cancelar consulta já marcada. Se a pessoa estiver apenas montando um
+        # agendamento ainda não confirmado, cancelar encerra somente essa solicitação.
+        etapa_atual = sessao.get("etapa", "")
+        etapas_fluxo_novo = {"especialidade", "apos_lista_especialidades", "confirmar_horarios", "data", "horario", "paciente", "confirmacao"}
+        if pedido_remarcacao(texto) and not str(etapa_atual).startswith("remarcar_"):
+            return _iniciar_acao_agendamento(sessao, "remarcar")
+        if pedido_cancelamento(texto):
+            if etapa_atual in etapas_fluxo_novo:
+                sessao.clear()
+                return responder("Tudo bem, cancelei esta solicitação. Nenhum agendamento novo foi confirmado. Posso ajudar com mais alguma coisa?")
+            if str(etapa_atual).startswith("cancelamento_"):
+                return processar_fluxo(texto, sessao)
+            return _iniciar_acao_agendamento(sessao, "cancelar")
 
         # Trata convênio informado em mensagem isolada antes de qualquer fluxo legado.
         # Isso evita que "tenho Sul América" caia no processar_mensagem antigo.
@@ -633,14 +826,16 @@ def mensagem():
         if not resposta and isinstance(resultado, str):
             resposta = resultado.strip()
         if not resposta:
-            resposta = "Como posso ajudar?"
+            resposta = "Posso ajudar com convênios, especialidades, horários, agendamento, remarcação ou cancelamento. O que você gostaria de fazer?"
+        if "vamos começar pelo botão de agendamento" in normalizar(resposta) or "escreva quero agendar uma consulta" in normalizar(resposta):
+            resposta = "Posso ajudar com convênios, especialidades, horários, agendamento, remarcação ou cancelamento. O que você gostaria de fazer?"
         return jsonify({"resposta": resposta, "resultado": resultado})
     except PerguntaInterativaWeb as pergunta:
-        # The legacy terminal flow cannot resume its Python call stack across HTTP requests.
-        # Avoid pretending the interactive flow is resumable; return a safe explanation.
+        # O fluxo de terminal não pode continuar seu call stack entre requisições HTTP.
+        # Não devolver a mensagem enganosa de que a pessoa precisa recomeçar pelo botão.
         app.logger.warning("Fluxo legado solicitou entrada web sem estado de continuação: %s", pergunta.pergunta)
         return jsonify({
-            "resposta": "Posso ajudar com informações da clínica e iniciar um agendamento. Para continuar essa solicitação, vamos começar pelo botão de agendamento ou escreva 'Quero agendar uma consulta'.",
+            "resposta": "Posso ajudar com convênios, especialidades, horários, agendamento, remarcação ou cancelamento. O que você gostaria de fazer?",
             "aguardando_resposta": False
         })
     except Exception:
