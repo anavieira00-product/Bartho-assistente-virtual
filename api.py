@@ -4,6 +4,8 @@ import uuid
 import unicodedata
 import json
 import sqlite3
+from datetime import datetime, timedelta, date
+from difflib import SequenceMatcher
 from pathlib import Path
 from threading import RLock
 from contextlib import redirect_stdout
@@ -96,7 +98,7 @@ class SessaoPersistente(dict):
 ESPECIALIDADES = {
     "cardiologia": ("cardiologia", "cardiologista", "coração", "coracao", "médico do coração", "medico do coracao"),
     "dermatologia": ("dermatologia", "dermatologista"),
-    "clinica_geral": ("clínica geral", "clinica geral", "clínico geral", "clinico geral"),
+    "clinica_geral": ("clínica geral", "clinica geral", "clínico geral", "clinico geral", "clínico gera", "clinico gera", "clinica gera", "clínico geral.", "medicina geral"),
 }
 
 def normalizar(texto):
@@ -106,9 +108,20 @@ def normalizar(texto):
 
 def extrair_especialidade(texto):
     t = normalizar(texto)
+    # Correspondência direta para os nomes e sinônimos mais comuns.
     for canonica, aliases in ESPECIALIDADES.items():
-        if any(normalizar(a) in t for a in aliases):
+        if any(re.search(r"\b" + re.escape(normalizar(a)) + r"\b", t) for a in aliases):
             return canonica
+    # Tolerância a pequenos erros de digitação em respostas curtas, como "clinico gera".
+    if len(t.split()) <= 4:
+        candidatos = {
+            "clinica_geral": ["clinico geral", "clinica geral", "clinico gera", "clinica gera"],
+            "cardiologia": ["cardiologia", "cardiologista"],
+            "dermatologia": ["dermatologia", "dermatologista"],
+        }
+        for canonica, aliases in candidatos.items():
+            if any(SequenceMatcher(None, t, alias).ratio() >= 0.82 for alias in aliases):
+                return canonica
     return None
 
 def sim(texto):
@@ -137,10 +150,18 @@ def identificar_dia_semana(texto):
 
 def pergunta_especialidades(texto):
     t = normalizar(texto)
-    return any(frase in t for frase in (
-        "quais especialidades", "quais as especialidades", "quais sao as especialidades",
-        "que especialidades", "especialidades atende", "especialidades tem",
-        "quais especialidades a clinica atende", "quais especialidades voces atendem",
+    menciona_especialidade = "especialidade" in t or "especialidades" in t
+    pergunta = any(x in t for x in (
+        "quais", "qual", "que", "tem", "atende", "atendem", "oferece", "oferecem",
+        "voces tem", "voces atendem", "a clinica tem"
+    ))
+    return menciona_especialidade and pergunta
+
+def pergunta_horarios(texto):
+    t = normalizar(texto)
+    return any(x in t for x in (
+        "quais horarios", "qual horario", "horarios disponiveis", "consultar horarios",
+        "ver horarios", "tem horario", "tem horarios", "quero horario", "quero horarios"
     ))
 
 def identificar_convenio(texto):
@@ -153,6 +174,70 @@ def identificar_convenio(texto):
     if "sulamerica" in t:
         return "SulAmérica"
     return None
+
+def resolver_data_flexivel(texto):
+    """Resolve hoje/amanhã, dias da semana e datas como 16/10 ou 16/10/2026."""
+    t = normalizar(texto)
+    # Extrai data explícita mesmo quando vem dentro de uma frase ("quero dia 16/10/2026").
+    m = re.search(r"\b(\d{1,2})[/-](\d{1,2})(?:[/-](\d{2,4}))?\b", t)
+    if m:
+        dia, mes, ano = int(m.group(1)), int(m.group(2)), m.group(3)
+        ano = int(ano) if ano else datetime.now().year
+        if ano < 100:
+            ano += 2000
+        try:
+            data = date(ano, mes, dia)
+            hoje = date.today()
+            if not m.group(3) and data < hoje:
+                data = date(ano + 1, mes, dia)
+            return datetime.combine(data, datetime.min.time())
+        except ValueError:
+            return None
+    if "hoje" in t:
+        return datetime.now()
+    if "amanha" in t:
+        return datetime.now() + timedelta(days=1)
+    dia_nome, _ = identificar_dia_semana(texto)
+    if dia_nome:
+        try:
+            return resolver_data(dia_nome)
+        except Exception:
+            return None
+    try:
+        return resolver_data(texto)
+    except Exception:
+        return None
+
+
+def pedido_cancelamento(texto):
+    t = normalizar(texto)
+    return t in {"cancela", "cancelar", "cancela isso", "cancelar agendamento", "cancela consulta", "quero cancelar", "desisto", "desistir"}
+
+
+def pedido_nova_data(texto):
+    t = normalizar(texto)
+    tem_data = bool(re.search(r"\b\d{1,2}[/-]\d{1,2}(?:[/-]\d{2,4})?\b", t))
+    dia, _ = identificar_dia_semana(texto)
+    return tem_data or dia is not None or "hoje" in t or "amanha" in t
+
+
+def pedido_novo_horario(texto):
+    t = normalizar(texto)
+    return bool(re.search(r"\b(?:[01]?\d|2[0-3])(?::[0-5]\d|h(?:[0-5]\d)?)?\b", t)) and any(x in t for x in (" as ", " horario", " as ", " para ", " as "))
+
+
+def extrair_horario(texto):
+    t = normalizar(texto)
+    m = re.search(r"\b([01]?\d|2[0-3])(?::([0-5]\d)|h(?:([0-5]\d))?)\b", t)
+    if not m:
+        # Em frases, permite "às 18" / "as 18" sem confundir datas.
+        m = re.search(r"\bas\s+([01]?\d|2[0-3])\b", t)
+        if not m:
+            return None
+        hora, minuto = int(m.group(1)), 0
+    else:
+        hora, minuto = int(m.group(1)), int(m.group(2) or m.group(3) or 0)
+    return f"{hora:02d}:{minuto:02d}"
 
 def faq(texto, convenio=None):
     t = normalizar(texto)
@@ -266,6 +351,12 @@ def processar_fluxo(texto, sessao):
         return responder(f"Temos atendimento de {nome}. Quer consultar os horários disponíveis?")
 
     if etapa == "confirmar_horarios":
+        if pergunta_horarios(texto):
+            sessao["etapa"] = "data"
+            dias = sessao.get("dias_atendimento") or consultar_dias_medico(sessao["medico"])
+            nomes_dias = ["segunda-feira", "terça-feira", "quarta-feira", "quinta-feira", "sexta-feira", "sábado", "domingo"]
+            dias_texto = ", ".join(nomes_dias[d] for d in dias if isinstance(d, int) and 0 <= d < 7)
+            return responder(f"Claro! Para consultar a disponibilidade de {sessao.get('especialidade', '').replace('_', ' ').title()}, informe a data ou um dia de atendimento. {sessao['medico']} atende em {dias_texto}.")
         dia_nome, dia_numero = identificar_dia_semana(texto)
         if dia_nome:
             dias_medico = sessao.get("dias_atendimento") or consultar_dias_medico(sessao["medico"])
@@ -303,7 +394,7 @@ def processar_fluxo(texto, sessao):
 
     if etapa == "data":
         dia_nome, _ = identificar_dia_semana(texto)
-        data = resolver_data(dia_nome or texto)
+        data = resolver_data_flexivel(texto)
         if data is None:
             return responder("Não consegui identificar a data. Informe hoje, amanhã ou um dia da semana, como terça-feira.")
         if not consultorio_aberto(data):
@@ -321,10 +412,31 @@ def processar_fluxo(texto, sessao):
             return responder("Não encontrei horários livres nessa data. Informe outro dia, por favor.")
         sessao["horarios_livres"] = livres
         sessao["etapa"] = "horario"
+        solicitado = sessao.pop("horario_solicitado", None)
+        if solicitado:
+            if solicitado in livres:
+                sessao["horario"] = solicitado
+                sessao["etapa"] = "paciente"
+                return responder(f"O horário das {solicitado} está disponível. Qual é o nome completo do paciente?")
+            return responder(f"Às {solicitado}, não há horário disponível nessa data. Os horários disponíveis são: " + ", ".join(livres) + ". Qual horário você prefere?")
         return responder("Horários disponíveis: " + ", ".join(livres) + ". Qual horário você prefere?")
 
     if etapa == "horario":
+        if pedido_nova_data(texto):
+            horario_pedido = extrair_horario(texto)
+            if horario_pedido:
+                sessao["horario_solicitado"] = horario_pedido
+            sessao.pop("data", None)
+            sessao.pop("horario", None)
+            sessao["etapa"] = "data"
+            return processar_fluxo(texto, sessao)
         horario = t.replace("h", ":00") if re.fullmatch(r"\d{1,2}h", t) else t
+        # Aceita "18"/"18h" e frases como "sexta às 18" sem perder o pedido de trocar a data.
+        m_hora = re.search(r"\b([01]?\d|2[0-3])(?::([0-5]\d)|h(?:([0-5]\d))?)?\b", t)
+        if m_hora and not re.fullmatch(r"\d{1,2}(?::\d{2})?", horario):
+            hora = int(m_hora.group(1))
+            minuto = int(m_hora.group(2) or m_hora.group(3) or 0)
+            horario = f"{hora:02d}:{minuto:02d}"
         if re.fullmatch(r"\d{1,2}", horario):
             horario = horario.zfill(2) + ":00"
         if horario not in sessao.get("horarios_livres", []):
@@ -380,6 +492,12 @@ def mensagem():
         sessao = _carregar_sessao(conversa_id)
         texto_normalizado = normalizar(texto)
 
+        # Cancelamento pode ser solicitado em qualquer etapa, inclusive quando o sistema
+        # está aguardando um horário ou uma confirmação.
+        if pedido_cancelamento(texto):
+            sessao.clear()
+            return responder("Tudo bem, cancelei esta solicitação. Nenhum agendamento foi confirmado. Se quiser, podemos começar novamente.")
+
         if texto_normalizado in {"oi", "ola", "opa", "bom dia", "boa tarde", "boa noite", "oi tudo bem", "ola tudo bem"} and not sessao.get("etapa"):
             return responder("Olá! 👋 Sou o Bartho, assistente virtual da Clínica Bem. Como posso ajudar?")
 
@@ -430,6 +548,12 @@ def mensagem():
                 # inicia/continua a escolha de especialidade, sem cair no fluxo legado.
                 sessao["etapa"] = "apos_lista_especialidades"
             return responder(resposta_faq)
+
+        # Evita enviar perguntas simples de agenda para o fluxo legado de terminal,
+        # que não consegue manter perguntas interativas entre requisições HTTP.
+        if pergunta_horarios(texto):
+            sessao["etapa"] = "especialidade"
+            return responder("Claro! Para consultar os horários, primeiro me diga qual especialidade você procura: Cardiologia, Dermatologia ou Clínica Geral.")
 
     captura = StringIO()
     try:
