@@ -117,8 +117,35 @@ def sim(texto):
 def nao(texto):
     return normalizar(texto) in {"nao", "n", "nao quero", "agora nao", "depois"}
 
-def faq(texto):
+def identificar_convenio(texto):
+    """Identifica o convênio mencionado sem depender de uma frase exata."""
     t = normalizar(texto)
+    if "unimed" in t:
+        return "Unimed"
+    if "bradesco" in t:
+        return "Bradesco Saúde"
+    if "sulamerica" in t:
+        return "SulAmérica"
+    return None
+
+def faq(texto, convenio=None):
+    t = normalizar(texto)
+    # Perguntas de cobertura precisam ser tratadas antes da FAQ genérica de convênios.
+    # Não afirmamos cobertura garantida: ela depende das regras do plano do paciente.
+    pergunta_cobertura = any(x in t for x in (
+        "cobre consulta", "cobre consultas", "cobre a consulta", "cobertura da consulta",
+        "meu plano cobre", "plano cobre consulta", "consulta e coberta",
+        "atende consulta pelo convenio", "posso consultar pelo convenio",
+        "cobre", "tem cobertura", "e coberto", "e coberta", "cobertura"
+    )) and any(x in t for x in ("consulta", "plano", "convenio", "cobre", "cobertura", "coberto", "coberta"))
+    if pergunta_cobertura:
+        plano = convenio or identificar_convenio(texto)
+        if plano:
+            return (f"A Clínica Bem aceita {plano}, mas não consigo confirmar apenas por aqui se a sua consulta "
+                    f"está coberta. Isso depende do produto contratado, da rede credenciada e das regras do plano. "
+                    f"Confirme a cobertura da consulta diretamente com a {plano} antes do atendimento.")
+        return ("A Clínica Bem aceita Unimed, Bradesco Saúde e SulAmérica, mas não consigo confirmar a cobertura "
+                "sem saber qual é o seu plano. A cobertura depende do produto contratado e das regras da operadora.")
     if any(x in t for x in ("endereco", "onde fica", "localizacao", "local da clinica", "como chegar")):
         return "O endereço cadastrado da Clínica Bem é Avenida x, 1, Belo Horizonte/MG."
     if any(x in t for x in ("quanto custa", "qual o valor", "valor da consulta", "preco da consulta", "preço da consulta")):
@@ -191,7 +218,7 @@ def processar_fluxo(texto, sessao):
     t = normalizar(texto)
 
     # Permite perguntas informativas durante uma jornada sem perder a etapa.
-    resposta_faq = faq(texto)
+    resposta_faq = faq(texto, sessao.get("convenio_informado"))
     if resposta_faq:
         return responder(resposta_faq)
 
@@ -331,12 +358,28 @@ def mensagem():
             # Não prende a conversa a esse contexto se a próxima mensagem for outra coisa.
             sessao.clear()
 
+        # Reconhece quando a pessoa informa o próprio convênio, sem repetir a FAQ
+        # genérica como se ela tivesse perguntado novamente quais planos são aceitos.
+        convenio_mencionado = identificar_convenio(texto)
+        mensagem_informa_convenio = any(x in texto_normalizado for x in (
+            "tenho", "uso", "sou cliente", "meu convenio", "meu plano", "atendo pelo"
+        ))
+        if convenio_mencionado and mensagem_informa_convenio and not any(
+            x in texto_normalizado for x in ("quais convenios", "quais planos", "aceita convenio", "aceita convenios")
+        ):
+            sessao["convenio_informado"] = convenio_mencionado
+            return responder(
+                f"Entendi, você tem {convenio_mencionado}. A Clínica Bem aceita esse convênio. "
+                "A cobertura de uma consulta depende do produto contratado e das regras da operadora. "
+                "Você quer saber sobre a cobertura ou deseja agendar uma consulta?"
+            )
+
         if sessao.get("etapa"):
             resultado = processar_fluxo(texto, sessao)
             if resultado is not None:
                 return resultado
 
-        resposta_faq = faq(texto)
+        resposta_faq = faq(texto, sessao.get("convenio_informado"))
         if resposta_faq:
             # Registra somente a pergunta sobre especialidades como contexto de
             # continuação. As demais perguntas frequentes continuam sem alterar o fluxo.
