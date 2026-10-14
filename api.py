@@ -117,6 +117,32 @@ def sim(texto):
 def nao(texto):
     return normalizar(texto) in {"nao", "n", "nao quero", "agora nao", "depois"}
 
+DIAS_SEMANA = {
+    "segunda-feira": 0, "segunda": 0,
+    "terca-feira": 1, "terca": 1,
+    "quarta-feira": 2, "quarta": 2,
+    "quinta-feira": 3, "quinta": 3,
+    "sexta-feira": 4, "sexta": 4,
+    "sabado": 5, "domingo": 6,
+}
+
+def identificar_dia_semana(texto):
+    """Encontra um dia da semana dentro de frases naturais, como 'e quarta?' ."""
+    t = normalizar(texto)
+    # Verifica os nomes longos primeiro para evitar correspondências parciais.
+    for nome in sorted(DIAS_SEMANA, key=len, reverse=True):
+        if re.search(r"\b" + re.escape(nome) + r"\b", t):
+            return nome, DIAS_SEMANA[nome]
+    return None, None
+
+def pergunta_especialidades(texto):
+    t = normalizar(texto)
+    return any(frase in t for frase in (
+        "quais especialidades", "quais as especialidades", "quais sao as especialidades",
+        "que especialidades", "especialidades atende", "especialidades tem",
+        "quais especialidades a clinica atende", "quais especialidades voces atendem",
+    ))
+
 def identificar_convenio(texto):
     """Identifica o convênio mencionado sem depender de uma frase exata."""
     t = normalizar(texto)
@@ -152,7 +178,7 @@ def faq(texto, convenio=None):
         return "A consulta particular custa R$ 70,00."
     if any(x in t for x in ("unimed", "bradesco saude", "sulamerica", "convenio", "convênio", "planos aceitos")):
         return "A Clínica Bem aceita Unimed, Bradesco Saúde e SulAmérica. A cobertura depende das condições do plano contratado."
-    if any(x in t for x in ("quais especialidades", "especialidades atende", "especialidades tem", "que especialidades")):
+    if pergunta_especialidades(texto):
         return "A Clínica Bem atende Cardiologia, Dermatologia e Clínica Geral."
     if any(x in t for x in ("horario de funcionamento", "que horas abre", "que horas fecha", "funcionamento da clinica", "horario da clinica")):
         return "A Clínica Bem funciona de segunda a sexta-feira, das 08:00 às 18:00. O último horário de consulta começa às 17:00."
@@ -220,6 +246,10 @@ def processar_fluxo(texto, sessao):
     # Permite perguntas informativas durante uma jornada sem perder a etapa.
     resposta_faq = faq(texto, sessao.get("convenio_informado"))
     if resposta_faq:
+        # Se a pessoa pergunta pelas especialidades durante outro fluxo, passamos
+        # para a escolha de especialidade em vez de deixar uma etapa antiga ativa.
+        if pergunta_especialidades(texto):
+            sessao["etapa"] = "especialidade"
         return responder(resposta_faq)
 
     if etapa == "especialidade":
@@ -236,11 +266,22 @@ def processar_fluxo(texto, sessao):
         return responder(f"Temos atendimento de {nome}. Quer consultar os horários disponíveis?")
 
     if etapa == "confirmar_horarios":
+        dia_nome, dia_numero = identificar_dia_semana(texto)
+        if dia_nome:
+            dias_medico = sessao.get("dias_atendimento") or consultar_dias_medico(sessao["medico"])
+            if dia_numero not in dias_medico:
+                sessao["etapa"] = "data"
+                nomes_dias = ["segunda-feira", "terça-feira", "quarta-feira", "quinta-feira", "sexta-feira", "sábado", "domingo"]
+                dias_texto = ", ".join(nomes_dias[d] for d in dias_medico if isinstance(d, int) and 0 <= d < 7)
+                return responder(f"A Dra. {sessao.get('medico', '').replace('Dra. ', '')} não atende na {dia_nome}. Os dias de atendimento são: {dias_texto}. Qual desses dias você prefere?")
+            # O usuário já indicou o dia desejado; não precisa responder sim/não.
+            sessao["etapa"] = "data"
+            return processar_fluxo(dia_nome, sessao)
         if nao(texto):
             sessao.clear()
             return responder("Tudo bem! Quando quiser, posso ajudar a consultar os horários ou agendar uma consulta.")
         if not sim(texto):
-            return responder("Você gostaria de consultar os horários disponíveis? Responda sim ou não.")
+            return responder("Claro! Você pode me dizer diretamente o dia que prefere, como terça ou quinta, ou responder sim para consultar os horários disponíveis.")
         sessao["etapa"] = "data"
         dias = sessao.get("dias_atendimento") or consultar_dias_medico(sessao["medico"])
         nomes_dias = [
@@ -261,7 +302,8 @@ def processar_fluxo(texto, sessao):
         )
 
     if etapa == "data":
-        data = resolver_data(texto)
+        dia_nome, _ = identificar_dia_semana(texto)
+        data = resolver_data(dia_nome or texto)
         if data is None:
             return responder("Não consegui identificar a data. Informe hoje, amanhã ou um dia da semana, como terça-feira.")
         if not consultorio_aberto(data):
@@ -383,10 +425,9 @@ def mensagem():
         if resposta_faq:
             # Registra somente a pergunta sobre especialidades como contexto de
             # continuação. As demais perguntas frequentes continuam sem alterar o fluxo.
-            if any(x in texto_normalizado for x in (
-                "quais especialidades", "especialidades atende", "especialidades tem",
-                "que especialidades"
-            )):
+            if pergunta_especialidades(texto):
+                # Uma resposta simples como "Dermatologia" na mensagem seguinte
+                # inicia/continua a escolha de especialidade, sem cair no fluxo legado.
                 sessao["etapa"] = "apos_lista_especialidades"
             return responder(resposta_faq)
 
