@@ -2,6 +2,9 @@ import os
 import re
 import uuid
 import unicodedata
+import json
+import sqlite3
+from pathlib import Path
 from threading import RLock
 from contextlib import redirect_stdout
 from io import StringIO
@@ -25,10 +28,70 @@ app.secret_key = os.environ.get("BARTHO_SECRET_KEY") or os.urandom(32).hex()
 origem_permitida = os.environ.get("BARTHO_ALLOWED_ORIGIN", "https://anavieira00-product.github.io")
 CORS(app, resources={r"/*": {"origins": origem_permitida}})
 
-# Estado separado por conversa. O frontend envia um identificador persistido no navegador.
-# Nota: memória temporária do processo; será perdida se o serviço reiniciar.
-_CONVERSAS = {}
+# Estado separado por conversa e persistido em SQLite, em vez de ficar apenas na RAM.
+# Em produção, configure BARTHO_SESSION_DB_PATH para um disco persistente do Render
+# (por exemplo, /var/data/bartho_sessions.db).
+_SESSION_DB = os.environ.get("BARTHO_SESSION_DB_PATH", "bartho_sessions.db")
 _LOCK = RLock()
+
+
+def _conectar_sessoes():
+    caminho = Path(_SESSION_DB)
+    caminho.parent.mkdir(parents=True, exist_ok=True)
+    con = sqlite3.connect(str(caminho), timeout=10)
+    con.execute("CREATE TABLE IF NOT EXISTS conversas_web (id TEXT PRIMARY KEY, estado TEXT NOT NULL, atualizado_em TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)")
+    con.commit()
+    return con
+
+
+def _salvar_sessao(conversa_id, estado):
+    with _conectar_sessoes() as con:
+        con.execute(
+            "INSERT INTO conversas_web (id, estado, atualizado_em) VALUES (?, ?, CURRENT_TIMESTAMP) "
+            "ON CONFLICT(id) DO UPDATE SET estado=excluded.estado, atualizado_em=CURRENT_TIMESTAMP",
+            (conversa_id, json.dumps(dict(estado), ensure_ascii=False)),
+        )
+
+
+def _carregar_sessao(conversa_id):
+    with _conectar_sessoes() as con:
+        linha = con.execute("SELECT estado FROM conversas_web WHERE id = ?", (conversa_id,)).fetchone()
+    if not linha:
+        return SessaoPersistente(conversa_id, {})
+    try:
+        estado = json.loads(linha[0])
+        if not isinstance(estado, dict):
+            estado = {}
+    except (TypeError, json.JSONDecodeError):
+        estado = {}
+    return SessaoPersistente(conversa_id, estado)
+
+
+class SessaoPersistente(dict):
+    """Dicionário compatível com o fluxo atual que salva cada alteração no SQLite."""
+    def __init__(self, conversa_id, estado=None):
+        self.conversa_id = conversa_id
+        super().__init__(estado or {})
+
+    def _persistir(self):
+        _salvar_sessao(self.conversa_id, self)
+
+    def __setitem__(self, chave, valor):
+        super().__setitem__(chave, valor)
+        self._persistir()
+
+    def update(self, *args, **kwargs):
+        super().update(*args, **kwargs)
+        self._persistir()
+
+    def clear(self):
+        super().clear()
+        self._persistir()
+
+    def pop(self, chave, *args):
+        resultado = super().pop(chave, *args)
+        self._persistir()
+        return resultado
 
 ESPECIALIDADES = {
     "cardiologia": ("cardiologia", "cardiologista", "coração", "coracao", "médico do coração", "medico do coracao"),
@@ -79,49 +142,45 @@ def faq(texto):
 def responder(texto):
     return jsonify({"resposta": texto, "aguardando_resposta": False})
 
-def iniciar_por_especialidade(sessao, especialidade):
-    """Inicia a jornada a partir de uma especialidade reconhecida."""
-    medicos = consultar_medicos_por_especialidade(especialidade)
-    if not medicos:
-        sessao.clear()
-        sessao["etapa"] = "especialidade"
-        return responder("Não encontrei médico cadastrado para essa especialidade. Você pode escolher Cardiologia, Dermatologia ou Clínica Geral.")
-
-    medico = medicos[0]
-    dias = consultar_dias_medico(medico)
-    nomes_dias = [
-        "segunda-feira", "terça-feira", "quarta-feira",
-        "quinta-feira", "sexta-feira", "sábado", "domingo"
-    ]
-    dias_texto = ", ".join(
-        nomes_dias[d] for d in dias if isinstance(d, int) and 0 <= d < 7
-    )
-    nome = {
-        "cardiologia": "Cardiologia",
-        "dermatologia": "Dermatologia",
-        "clinica_geral": "Clínica Geral",
-    }[especialidade]
-    sessao.clear()
-    sessao.update({
-        "etapa": "confirmar_horarios",
-        "especialidade": especialidade,
-        "medico": medico,
-        "dias_atendimento": dias,
-    })
-    complemento = f" Os dias de atendimento são: {dias_texto}." if dias_texto else ""
-    return responder(
-        f"Temos atendimento de {nome} com {medico}.{complemento} "
-        "Quer consultar os horários disponíveis?"
-    )
-
-
 def iniciar_agendamento(sessao, texto=""):
     """Inicia o agendamento aproveitando os dados já presentes na mensagem."""
-    especialidade = extrair_especialidade(texto)
-    if especialidade:
-        return iniciar_por_especialidade(sessao, especialidade)
-
     sessao.clear()
+    especialidade = extrair_especialidade(texto)
+
+    if especialidade:
+        medicos = consultar_medicos_por_especialidade(especialidade)
+        if medicos:
+            medico = medicos[0]
+            dias = consultar_dias_medico(medico)
+            nomes_dias = [
+                "segunda-feira", "terça-feira", "quarta-feira",
+                "quinta-feira", "sexta-feira", "sábado", "domingo"
+            ]
+            dias_texto = ", ".join(
+                nomes_dias[d] for d in dias if isinstance(d, int) and 0 <= d < 7
+            )
+            sessao.update({
+                "etapa": "confirmar_horarios",
+                "especialidade": especialidade,
+                "medico": medico,
+                "dias_atendimento": dias,
+            })
+            nome = {
+                "cardiologia": "Cardiologia",
+                "dermatologia": "Dermatologia",
+                "clinica_geral": "Clínica Geral",
+            }[especialidade]
+            if dias_texto:
+                return responder(
+                    f"Temos atendimento de {nome} com {medico}. "
+                    f"Os dias de atendimento são: {dias_texto}. "
+                    "Quer consultar os horários disponíveis?"
+                )
+            return responder(
+                f"Temos atendimento de {nome} com {medico}. "
+                "Quer consultar os horários disponíveis?"
+            )
+
     sessao["etapa"] = "especialidade"
     return responder(
         "Claro! Qual especialidade você procura: Cardiologia, Dermatologia ou Clínica Geral?"
@@ -140,7 +199,14 @@ def processar_fluxo(texto, sessao):
         esp = extrair_especialidade(texto)
         if not esp:
             return responder("Não identifiquei a especialidade. Você procura Cardiologia, Dermatologia ou Clínica Geral?")
-        return iniciar_por_especialidade(sessao, esp)
+        medicos = consultar_medicos_por_especialidade(esp)
+        if not medicos:
+            return responder("Não encontrei médico cadastrado para essa especialidade. Posso ajudar com outra especialidade?")
+        sessao["especialidade"] = esp
+        sessao["medico"] = medicos[0]
+        sessao["etapa"] = "confirmar_horarios"
+        nome = {"cardiologia":"Cardiologia","dermatologia":"Dermatologia","clinica_geral":"Clínica Geral"}[esp]
+        return responder(f"Temos atendimento de {nome}. Quer consultar os horários disponíveis?")
 
     if etapa == "confirmar_horarios":
         if nao(texto):
@@ -242,7 +308,7 @@ def mensagem():
         return jsonify({"erro": "Identificador da conversa ausente. Atualize a página e tente novamente."}), 400
 
     with _LOCK:
-        sessao = _CONVERSAS.setdefault(conversa_id, {})
+        sessao = _carregar_sessao(conversa_id)
         texto_normalizado = normalizar(texto)
 
         if texto_normalizado in {"oi", "ola", "opa", "bom dia", "boa tarde", "boa noite", "oi tudo bem", "ola tudo bem"} and not sessao.get("etapa"):
@@ -255,34 +321,31 @@ def mensagem():
         )):
             return iniciar_agendamento(sessao, texto)
 
+        # Se a pessoa acabou de perguntar quais especialidades existem e responde
+        # apenas com uma delas (ex.: "Cardiologia"), aproveitamos o contexto para
+        # iniciar o agendamento. Esse estado é salvo no SQLite junto com a sessão.
+        if sessao.get("etapa") == "apos_lista_especialidades":
+            especialidade = extrair_especialidade(texto)
+            if especialidade:
+                return iniciar_agendamento(sessao, texto)
+            # Não prende a conversa a esse contexto se a próxima mensagem for outra coisa.
+            sessao.clear()
+
         if sessao.get("etapa"):
             resultado = processar_fluxo(texto, sessao)
             if resultado is not None:
                 return resultado
 
-        # Mantém a escolha de especialidade como continuação contextual:
-        # após perguntar quais especialidades existem, uma resposta como
-        # "Cardiologia" deve avançar para a jornada, não cair no fluxo legado.
-        pergunta_especialidades = any(
-            termo in texto_normalizado
-            for termo in (
-                "quais especialidades",
-                "especialidades atende",
-                "especialidades tem",
-                "que especialidades",
-            )
-        )
         resposta_faq = faq(texto)
         if resposta_faq:
-            if pergunta_especialidades:
-                sessao["etapa"] = "especialidade"
+            # Registra somente a pergunta sobre especialidades como contexto de
+            # continuação. As demais perguntas frequentes continuam sem alterar o fluxo.
+            if any(x in texto_normalizado for x in (
+                "quais especialidades", "especialidades atende", "especialidades tem",
+                "que especialidades"
+            )):
+                sessao["etapa"] = "apos_lista_especialidades"
             return responder(resposta_faq)
-
-        # Recuperação: se a sessão se perdeu após reinicialização/deploy,
-        # uma especialidade isolada ainda inicia o fluxo de agendamento.
-        especialidade_isolada = extrair_especialidade(texto)
-        if especialidade_isolada:
-            return iniciar_por_especialidade(sessao, especialidade_isolada)
 
     captura = StringIO()
     try:
