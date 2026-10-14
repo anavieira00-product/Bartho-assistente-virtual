@@ -79,45 +79,49 @@ def faq(texto):
 def responder(texto):
     return jsonify({"resposta": texto, "aguardando_resposta": False})
 
+def iniciar_por_especialidade(sessao, especialidade):
+    """Inicia a jornada a partir de uma especialidade reconhecida."""
+    medicos = consultar_medicos_por_especialidade(especialidade)
+    if not medicos:
+        sessao.clear()
+        sessao["etapa"] = "especialidade"
+        return responder("Não encontrei médico cadastrado para essa especialidade. Você pode escolher Cardiologia, Dermatologia ou Clínica Geral.")
+
+    medico = medicos[0]
+    dias = consultar_dias_medico(medico)
+    nomes_dias = [
+        "segunda-feira", "terça-feira", "quarta-feira",
+        "quinta-feira", "sexta-feira", "sábado", "domingo"
+    ]
+    dias_texto = ", ".join(
+        nomes_dias[d] for d in dias if isinstance(d, int) and 0 <= d < 7
+    )
+    nome = {
+        "cardiologia": "Cardiologia",
+        "dermatologia": "Dermatologia",
+        "clinica_geral": "Clínica Geral",
+    }[especialidade]
+    sessao.clear()
+    sessao.update({
+        "etapa": "confirmar_horarios",
+        "especialidade": especialidade,
+        "medico": medico,
+        "dias_atendimento": dias,
+    })
+    complemento = f" Os dias de atendimento são: {dias_texto}." if dias_texto else ""
+    return responder(
+        f"Temos atendimento de {nome} com {medico}.{complemento} "
+        "Quer consultar os horários disponíveis?"
+    )
+
+
 def iniciar_agendamento(sessao, texto=""):
     """Inicia o agendamento aproveitando os dados já presentes na mensagem."""
-    sessao.clear()
     especialidade = extrair_especialidade(texto)
-
     if especialidade:
-        medicos = consultar_medicos_por_especialidade(especialidade)
-        if medicos:
-            medico = medicos[0]
-            dias = consultar_dias_medico(medico)
-            nomes_dias = [
-                "segunda-feira", "terça-feira", "quarta-feira",
-                "quinta-feira", "sexta-feira", "sábado", "domingo"
-            ]
-            dias_texto = ", ".join(
-                nomes_dias[d] for d in dias if isinstance(d, int) and 0 <= d < 7
-            )
-            sessao.update({
-                "etapa": "confirmar_horarios",
-                "especialidade": especialidade,
-                "medico": medico,
-                "dias_atendimento": dias,
-            })
-            nome = {
-                "cardiologia": "Cardiologia",
-                "dermatologia": "Dermatologia",
-                "clinica_geral": "Clínica Geral",
-            }[especialidade]
-            if dias_texto:
-                return responder(
-                    f"Temos atendimento de {nome} com {medico}. "
-                    f"Os dias de atendimento são: {dias_texto}. "
-                    "Quer consultar os horários disponíveis?"
-                )
-            return responder(
-                f"Temos atendimento de {nome} com {medico}. "
-                "Quer consultar os horários disponíveis?"
-            )
+        return iniciar_por_especialidade(sessao, especialidade)
 
+    sessao.clear()
     sessao["etapa"] = "especialidade"
     return responder(
         "Claro! Qual especialidade você procura: Cardiologia, Dermatologia ou Clínica Geral?"
@@ -136,14 +140,7 @@ def processar_fluxo(texto, sessao):
         esp = extrair_especialidade(texto)
         if not esp:
             return responder("Não identifiquei a especialidade. Você procura Cardiologia, Dermatologia ou Clínica Geral?")
-        medicos = consultar_medicos_por_especialidade(esp)
-        if not medicos:
-            return responder("Não encontrei médico cadastrado para essa especialidade. Posso ajudar com outra especialidade?")
-        sessao["especialidade"] = esp
-        sessao["medico"] = medicos[0]
-        sessao["etapa"] = "confirmar_horarios"
-        nome = {"cardiologia":"Cardiologia","dermatologia":"Dermatologia","clinica_geral":"Clínica Geral"}[esp]
-        return responder(f"Temos atendimento de {nome}. Quer consultar os horários disponíveis?")
+        return iniciar_por_especialidade(sessao, esp)
 
     if etapa == "confirmar_horarios":
         if nao(texto):
@@ -280,6 +277,12 @@ def mensagem():
             if pergunta_especialidades:
                 sessao["etapa"] = "especialidade"
             return responder(resposta_faq)
+
+        # Recuperação: se a sessão se perdeu após reinicialização/deploy,
+        # uma especialidade isolada ainda inicia o fluxo de agendamento.
+        especialidade_isolada = extrair_especialidade(texto)
+        if especialidade_isolada:
+            return iniciar_por_especialidade(sessao, especialidade_isolada)
 
     captura = StringIO()
     try:
