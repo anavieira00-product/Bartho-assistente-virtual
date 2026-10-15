@@ -1,0 +1,10 @@
+/* Ajustes responsivos para celular — carregado depois de style.css. */
+@media (max-width: 768px) {
+  html, body { max-width: 100%; overflow-x: hidden; }
+  .slide { box-sizing: border-box; }
+  .cue { max-width: calc(100vw - 32px); box-sizing: border-box; }
+  img, video, canvas, iframe { max-width: 100%; }
+}
+@media (max-width: 480px) {
+  .cue { white-space: normal; overflow-wrap: anywhere; }
+}

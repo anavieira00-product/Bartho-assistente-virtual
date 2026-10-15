@@ -1,0 +1,94 @@
+:root{--navy:#104b91;--blue:#15529a;--orange:#ffad00;--ink:#0a3264;--muted:#617894;--bg:#f3f6fb;--line:#d7e2f1;--white:#fff}
+*{box-sizing:border-box}html,body{margin:0;height:100%;font-family:Inter,Arial,sans-serif;background:var(--bg);color:var(--ink)}body{overflow:hidden}
+.deck{height:100vh;position:relative}.slide{display:none;position:absolute;inset:0;padding:clamp(22px,3.8vh,46px) 6vw 78px;overflow:auto;background:radial-gradient(ellipse at 92% 4%,#15529a0c,transparent 30%),var(--bg)}
+.slide.active{display:flex;flex-direction:column;justify-content:center;animation:in .25s ease}@keyframes in{from{opacity:.3;transform:translateY(6px)}to{opacity:1;transform:none}}
+.kicker{font-size:13px;text-transform:uppercase;letter-spacing:.14em;font-weight:800;color:#d99100;margin-bottom:16px}
+h1{font-size:clamp(48px,7vw,92px);line-height:.98;letter-spacing:-.06em;margin:0 0 22px;color:var(--navy)}h2{font-size:clamp(27px,min(3.6vw,5.1vh),52px);line-height:1.04;letter-spacing:-.045em;margin:0 0 20px;max-width:1100px}h3{font-size:20px;margin:0 0 10px}
+p{font-size:clamp(14px,min(1.25vw,1.85vh),19px);line-height:1.42;color:var(--muted);max-width:950px;margin:0 0 16px}.lead{font-size:clamp(21px,2vw,28px);line-height:1.4}.accent{color:#e99b00}.small{font-size:13px!important}
+.pills{display:flex;flex-wrap:wrap;gap:9px;margin-top:16px}.pill{border:1px solid var(--line);background:white;border-radius:99px;padding:10px 15px;font-size:13px;font-weight:700;color:var(--blue)}
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px;margin-top:18px}.grid.two{grid-template-columns:repeat(2,minmax(0,1fr))}
+.card{background:#fff;border:1px solid var(--line);border-radius:20px;padding:clamp(14px,1.5vw,21px);box-shadow:0 10px 28px #104b9108}.card p{font-size:16px;margin:0}.num{font-size:12px;letter-spacing:.12em;color:#d99100;font-weight:800;margin-bottom:15px}
+.callout{border-left:4px solid var(--orange);padding:12px 0 12px 20px;margin-top:20px}.callout p{font-size:clamp(19px,2vw,26px);color:var(--ink);margin:0}.callout .stack-note{font-size:13px;line-height:1.4;color:var(--muted);margin-top:8px;font-weight:700;letter-spacing:.01em}
+.flow{display:flex;gap:10px;align-items:stretch;margin:24px 0;flex-wrap:wrap}.step{flex:1;min-width:140px;background:#fff;border:1px solid var(--line);border-radius:18px;padding:18px}.step strong{display:block;color:var(--blue);font-size:13px;margin-bottom:9px}.step span{font-size:15px;line-height:1.4;color:var(--muted)}.arrow{align-self:center;font-size:23px;color:var(--orange)}
+.arch{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:20px}.layer{background:white;border:1px solid var(--line);border-radius:18px;padding:20px}.layer .tag{font-size:12px;font-weight:800;color:#d99100;letter-spacing:.1em;margin-bottom:10px}.layer p{font-size:15px;margin:0}
+.comparison{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}.comparison figure{margin:0;background:#fff;border:1px solid var(--line);border-radius:18px;overflow:hidden}.comparison img{width:100%;height:auto;max-height:36vh;object-fit:contain;background:#eaf0f8;display:block}.comparison figcaption{padding:12px 15px;font-size:14px;font-weight:800}
+.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:15px;margin:18px 0}.metric{background:var(--navy);color:#fff;border-radius:20px;padding:clamp(14px,1.5vw,21px)}.metric b{display:block;font-size:clamp(32px,4vw,52px);color:var(--orange);line-height:1.1;margin-bottom:9px}.metric span{font-size:15px;line-height:1.4;display:block}
+.demo{background:white;border:1px solid var(--line);border-radius:22px;overflow:hidden;box-shadow:0 15px 35px #104b9112}.demo-head{padding:15px 20px;font-weight:800;border-bottom:1px solid var(--line)}.chat{background:#f3f6fb;padding:15px;min-height:95px;max-height: min(28vh,220px);overflow:auto;display:flex;flex-direction:column;gap:10px}.bubble{max-width:84%;padding:13px 16px;border-radius:17px;font-size:15px;line-height:1.4}.bot{background:#fff;align-self:flex-start}.user{background:var(--navy);color:white;align-self:flex-end}.actions{display:flex;gap:8px;flex-wrap:wrap;background:#f3f6fb;padding:12px}.actions button{background:#fff;color:var(--blue);border:1px solid var(--line);border-radius:99px;padding:10px 14px;font-weight:700}.actions button:hover{background:var(--orange);color:var(--ink)}.inputrow{display:flex;gap:8px;padding:12px}.inputrow input{flex:1;min-width:0;border:1px solid var(--line);border-radius:12px;padding:12px;font:inherit}.inputrow button{background:var(--orange);border:0;border-radius:12px;padding:0 18px;color:var(--ink);font-weight:900}
+.profile{display:grid;grid-template-columns:.7fr 1.3fr;gap:38px;align-items:center}.profile img{width:100%;max-width:300px;aspect-ratio:3/4;object-fit:cover;object-position:center top;border-radius:24px;border:4px solid var(--orange)}
+.duo{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:center}.dogphoto{width:100%;max-height:50vh;object-fit:cover;border-radius:22px;border:3px solid var(--orange)}.barthoimg{width:100%;max-height:50vh;object-fit:contain;background:var(--navy);border-radius:22px}
+.footer{position:fixed;bottom:0;left:0;right:0;height:62px;display:flex;align-items:center;justify-content:space-between;padding:0 28px;background:#ffffffed;border-top:1px solid var(--line);z-index:10}.brand{font-size:12px;letter-spacing:.1em;font-weight:900;color:var(--muted)}.controls{display:flex;align-items:center;gap:10px}.controls button{background:var(--navy);color:white;border:0;border-radius:10px;padding:9px 14px;font-size:18px;cursor:pointer}.counter{font-size:13px;color:var(--muted);min-width:60px;text-align:center}.progress{position:fixed;bottom:61px;left:0;height:3px;background:var(--orange);width:0;z-index:11;transition:width .2s}
+@media(max-width:760px){.slide{padding:28px 20px 90px;justify-content:flex-start}.grid,.grid.two,.arch,.comparison,.metrics,.profile,.duo{grid-template-columns:1fr}.comparison img{max-height:none}.profile img{max-width:190px}.step{min-width:44%}.arrow{display:none}}
+@media print{body{overflow:visible}.slide{display:flex!important;position:relative;min-height:100vh;page-break-after:always}.footer,.progress{display:none}}
+
+/* Interações de hover: feedback visual ao passar o mouse */
+.card,.layer,.metric,.step,.pill,.comparison figure,.demo,.profile img,.duo img,.actions button,.nav button,.controls button {
+  transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease, background-color .22s ease, filter .22s ease;
+}
+.card:hover,.layer:hover,.metric:hover,.step:hover,.comparison figure:hover,.demo:hover {
+  transform: translateY(-4px); box-shadow: 0 14px 32px rgba(16,55,101,.12);
+}
+.pill:hover { transform: translateY(-3px); background: #fff2d7; border-color: var(--orange); }
+.actions button:hover,.nav button:hover,.controls button:hover { transform: translateY(-2px); filter: brightness(1.07); box-shadow: 0 8px 18px rgba(16,55,101,.16); }
+.comparison figure img { transition: transform .28s ease; }
+.comparison figure:hover img { transform: scale(1.015); }
+.profile img:hover,.duo img:hover { transform: scale(1.025); filter: saturate(1.04); box-shadow: 0 12px 28px rgba(16,55,101,.16); }
+/* Slide 05: ampliar a conversa e alinhar a composição com os demais slides */
+.single-chat { grid-template-columns: minmax(0, 1fr); width: 100%; max-width: 1180px; margin-top: 22px; }
+.single-chat figure { width: 100%; max-width: 1180px; }
+.single-chat figure img { width: 100%; height: clamp(420px, 68vh, 680px); max-height: none; object-fit: contain; background: #eaf0f8; }
+.single-chat figure figcaption { padding: 14px 20px; font-size: clamp(15px, 1.1vw, 19px); }
+@media (max-height: 800px) and (min-width: 761px) {
+  .single-chat { max-width: min(1180px, 100%); margin-top: 12px; }
+  .single-chat figure img { height: clamp(360px, 58vh, 520px); }
+}
+button:focus-visible, input:focus-visible { outline: 3px solid var(--orange); outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; } }
+
+
+/* Slides ajustados para caber melhor na área útil do navegador */
+@media (max-height: 800px) and (min-width: 761px) {
+ .slide{padding-top:22px;padding-bottom:72px}
+ .kicker{margin-bottom:9px;font-size:11px}
+ h2{margin-bottom:12px}
+ p{margin-bottom:10px;line-height:1.36}
+ .grid{gap:10px;margin-top:12px}
+ .card{padding:14px;border-radius:16px}
+ .card h3{font-size:17px;margin-bottom:6px}
+ .card p{font-size:14px}
+ .metrics{gap:10px;margin:12px 0}
+ .metric b{font-size:clamp(28px,3.3vw,42px)}
+ .callout{margin-top:12px;padding:8px 0 8px 14px}
+}
+/* Mesma moldura para a inspiração e para o personagem do assistente */
+.duo .grid.two figure{width:100%;height:clamp(250px,43vh,390px);display:flex;flex-direction:column;overflow:hidden;border-radius:22px;background:var(--navy)}
+.duo .grid.two figure img{width:100%;height:100%;max-height:none;min-height:0;object-fit:cover;display:block}
+.duo .grid.two figure img.barthoimg{object-fit:contain;padding:8px;background:var(--navy)}
+.duo .grid.two figure figcaption{flex:0 0 auto;background:#fff;padding:10px 12px;font-size:14px;font-weight:800}
+@media(max-width:760px){.duo .grid.two figure{height:320px}}
+
+
+/* Lembretes discretos para quem apresenta: pequenos gatilhos no rodapé de cada slide */
+.cue{position:absolute;left:6vw;bottom:76px;z-index:5;display:flex;align-items:center;gap:7px;max-width:70%;padding:5px 10px;border:1px solid rgba(31,91,170,.16);border-radius:999px;background:rgba(255,255,255,.94);color:#526d91;font-size:10px;letter-spacing:.09em;font-weight:750;text-transform:uppercase;pointer-events:none;opacity:1}
+.cue b{color:#a2b4cc;font-size:8px;font-weight:700}
+@media(max-width:760px){.cue{left:20px;bottom:76px;max-width:calc(100% - 40px);font-size:9px;gap:5px;padding:4px 8px}}
+@media print{.cue{display:none}}
+
+
+.bartho-demo-layout{display:grid;grid-template-columns:minmax(220px,.72fr) minmax(0,1.8fr);gap:18px;align-items:stretch;margin-top:12px;max-height:58vh;min-height:360px}
+.bartho-brand-panel{background:linear-gradient(180deg,#104b91,#1b5da5);color:#fff;border-radius:18px;padding:20px;display:flex;flex-direction:column;overflow:hidden;min-height:360px}
+.clinic-brand{font-size:18px;font-weight:900;color:#fff}.clinic-brand span{color:var(--orange)}
+.bartho-panel-character{display:block;width:100%;height:clamp(150px,25vh,270px);object-fit:contain;object-position:center bottom;margin:8px auto 0;flex:1;min-height:0}
+.bartho-brand-panel h3{color:#fff;font-size:clamp(21px,2vw,28px);margin:4px 0 7px}.bartho-brand-panel p{color:#fff;font-size:14px;line-height:1.4;margin:0 0 14px}.assistant-status{font-size:12px;color:#fff;margin-top:auto;display:flex;align-items:center;gap:7px}.assistant-status i{display:inline-block;width:8px;height:8px;background:#43e59a;border-radius:50%}
+.bartho-demo-layout .demo{display:flex;flex-direction:column;min-width:0}.bartho-demo-layout .chat{flex:1;min-height:130px;max-height:none}.bartho-demo-layout .actions{padding:10px;gap:7px}.bartho-demo-layout .actions button{font-size:13px;padding:9px 11px}.bartho-demo-layout .inputrow{padding:10px}.bartho-demo-layout .demo-head{padding:15px 18px}.bartho-chat-head span{font-weight:400;color:var(--muted)}
+@media(max-width:760px){.bartho-demo-layout{grid-template-columns:1fr;max-height:none}.bartho-brand-panel{min-height:250px}.bartho-panel-character{height:180px;flex:none}.bartho-demo-layout .chat{min-height:160px;max-height:250px}}
+
+/* Estilos extraídos do index original, preservados sem reescrita. */
+
+/* Identidade do Bartho presente também na experiência de conversa */
+.bartho-chat-head{display:flex;align-items:center;gap:12px;min-height:72px}
+.chat-avatar{width:52px;height:52px;object-fit:contain;background:var(--navy);border-radius:50%;padding:2px;border:2px solid var(--orange);flex-shrink:0}
+.chat-head-sub{display:block;color:var(--muted);font-weight:400;font-size:13px;margin-top:3px}
+.chat-dog{width:48px;height:48px;object-fit:cover;border-radius:50%;border:2px solid var(--orange);margin-left:auto;flex-shrink:0}
+.welcome-bubble{display:flex;align-items:center;gap:12px;max-width:92%}
+.welcome-avatar{width:42px;height:42px;object-fit:contain;background:var(--navy);border-radius:50%;padding:2px;flex-shrink:0}
+@media(max-width:600px){.chat-dog{width:40px;height:40px}.chat-avatar{width:44px;height:44px}.welcome-bubble{max-width:100%}}
