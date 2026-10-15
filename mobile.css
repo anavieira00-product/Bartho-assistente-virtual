@@ -1,5 +1,157 @@
+Texto colado(20261015-175909).txt
+Documento
+cuidado para não atraplhar a versão do pc 
+
+Pode deixar. Vou preservar a versão do PC e fazer os ajustes exclusivamente para telas de até 760 px, sempre que possível.
+
+Analisei o CSS que você enviou e identifiquei um ponto importante: o chat já tem regras para aparecer no celular, mas o cartão azul usa overflow: hidden, o que pode cortar parte do conteúdo. Além disso, o slide precisa permitir que você role até o campo de mensagem.
+
+Minha abordagem será:
+
+PC e notebook: manter o CSS e o comportamento atuais.
+Celular: permitir a rolagem vertical do slide 8 para acessar toda a demonstração.
+Cartão azul: corrigir o corte do conteúdo, sem mudar a identidade visual.
+Chat: garantir espaço para o histórico, os botões de sugestões, o campo de texto e o botão de envio.
+Navegação inferior: reservar espaço suficiente para que ela não esconda o final da demonstração.
+
+Não vou mexer no script.js nem na integração com a API sem identificar uma necessidade concreta.
+
+O próximo passo é aplicar a correção no mobile.css e testar no celular. Como o CSS sozinho não comprova o funcionamento, não vou afirmar que está resolvido antes de conferir o resultado.
+
+então faça e me mande
+
+Pronto! Preparei uma nova versão do mobile.css, concentrada em fazer a demonstração do Bartho funcionar visualmente no celular, sem alterar o layout do computador.
+
+📥 Baixe o arquivo corrigido
+
+Opção 1 — Somente o arquivo que precisa substituir:
+
+⬇️ Baixar mobile.css corrigido
+
+Opção 2 — Arquivo ZIP:
+
+⬇️ Baixar mobile.css em ZIP
+
+O que ajustei
+Cartão azul: não deve mais cortar o conteúdo do personagem e do texto.
+Área de conversa: fica abaixo do cartão, acessível pela rolagem vertical.
+Mensagens: histórico com rolagem própria.
+Botões de sugestões: podem ocupar mais de uma linha.
+Campo de mensagem: espaço para digitar e botão de envio acessível no celular.
+Barra inferior: espaço adicional para evitar que ela esconda o final do conteúdo.
+Computador: as novas regras estão limitadas a telas de até 760 px.
+Como publicar
+Baixe o mobile.css.
+No GitHub, abra o arquivo mobile.css do repositório.
+Substitua seu conteúdo pelo arquivo novo.
+Faça o commit e aguarde a publicação.
+No iPhone, recarregue a página. Se necessário, feche e abra o navegador novamente.
+
+Importante: preserve os outros três arquivos. Não altere o index.html, o style.css nem o script.js neste momento.
+
+A correção foi preparada a partir do CSS e da estrutura que você compartilhou. Ainda não consegui executar um teste visual no iPhone, então precisamos conferir se o campo de mensagem aparece corretamente após a publicação.
+
+mobile.css
+Código
+Ó, na parte da demonstração, ela fica cortada assim, eu não consigo rolar ela normal pra conseguir escrever, porque aí ela volta. E a foto do último slide, que é o contato, ela tá cortada assim, eu não consigo nem rolar. O resto funciona 
+
+
+Preparei uma nova versão do mobile.css, focada
+
+nos dois problemas que você mostrou: o chat do slide 8 e o conteúdo cortado no slide 10.
+
+Baixar o mobile.css corrigido
+Baixar o ZIP
+
+Para instalar: substitua apenas o mobile.css no GitHub. Não altere o style.css, o index.html nem o script.js.
+
+O ajuste permite rolar os slides no celular, aumenta o espaço inferior para não esconder o conteúdo atrás da navegação e deixa o cartão e a conversa em sequência vertical. As regras novas ficam dentro de consultas de mídia mobile, preservando as regras de desktop.
+
+Ainda não consegui testar no iPhone real. Depois de publicar, confira especialmente se consegue rolar até o campo de mensagem do Bartho e até o final do slide de contato.
+
+mobile.css
+Código
+
+GECKOAPI DESENVOLVIMENTO DE SOFTWARES LTDA
+
+Dados públicos prontos via API | GeckoAPI
+
+Consulte sites públicos via API e receba JSON rastreável para IA, BI e automações. Teste grátis.
+
+Anúncio
+Mais opções
+
+Sponsored options
+Ad
+Biblioteca
+/
+Carol
+/
+mobile.css
+999
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
 /* Responsividade mobile do Bartho.
-   Todas as regras ficam dentro de media queries: desktop permanece intacto. */
+   Todas as alterações ficam limitadas a telas de até 760px para preservar o desktop. */
 @media (max-width: 760px) {
   html, body {
     width: 100%;
@@ -8,28 +160,34 @@
     overflow: hidden;
   }
 
+
   .deck {
-    height: 100dvh;
-    height: 100vh; /* fallback para navegadores sem dvh */
+    height: 100vh;
     height: 100dvh;
     overflow: hidden;
   }
 
-  /* O próprio slide rola; a barra de navegação continua fixa. */
+
+  /* A rolagem acontece no slide ativo. O espaço inferior evita que o footer fixo
+     esconda campos, imagens ou o final do último slide. */
   .slide,
   .slide.active {
     box-sizing: border-box;
-    padding: 28px 20px calc(100px + env(safe-area-inset-bottom, 0px));
+    padding: 28px 20px calc(190px + env(safe-area-inset-bottom, 0px));
     overflow-x: hidden;
     overflow-y: auto;
-    overscroll-behavior-y: contain;
+    overscroll-behavior-y: auto;
     -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
     justify-content: flex-start;
     align-items: stretch;
+    scroll-padding-bottom: 190px;
   }
+
 
   .slide > * { min-width: 0; max-width: 100%; }
   img, video, canvas, iframe { max-width: 100%; }
+
 
   .grid, .grid.two, .arch, .comparison, .metrics, .profile, .duo {
     min-width: 0;
@@ -37,7 +195,8 @@
   }
   .step { min-width: 0; }
 
-  /* Etiquetas no fluxo, sem sobrepor títulos ou textos. */
+
+  /* Etiquetas no fluxo normal, sem sobrepor títulos e textos. */
   .cue {
     position: relative;
     inset: auto;
@@ -56,193 +215,5 @@
     z-index: 1;
   }
 
-  /* Slide 8: deixa cartão e chat no fluxo vertical e não corta o cartão. */
-  .bartho-demo-layout {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    align-items: stretch;
-    gap: 14px;
-    width: 100%;
-    max-width: 100%;
-    max-height: none;
-    min-height: 0;
-    height: auto;
-    overflow: visible;
-  }
 
-  .bartho-brand-panel {
-    box-sizing: border-box;
-    width: 100%;
-    min-width: 0;
-    min-height: 0;
-    height: auto;
-    overflow: visible;
-    padding: 18px;
-  }
-
-  .bartho-panel-character {
-    display: block;
-    width: 100%;
-    height: 190px;
-    max-height: none;
-    flex: 0 0 190px;
-    object-fit: contain;
-    object-position: center bottom;
-    margin: 8px auto 4px;
-  }
-
-  .bartho-brand-panel h3 {
-    flex: 0 0 auto;
-    margin: 4px 0 8px;
-    overflow-wrap: anywhere;
-  }
-
-  .bartho-brand-panel p {
-    flex: 0 0 auto;
-    margin: 0 0 12px;
-  }
-
-  .assistant-status {
-    flex: 0 0 auto;
-    margin-top: 8px;
-  }
-
-  .bartho-demo-layout .demo {
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-    min-width: 0;
-    min-height: 0;
-    max-height: none;
-    overflow: visible;
-  }
-
-  .bartho-demo-layout .demo-head {
-    flex: 0 0 auto;
-    min-height: 64px;
-    padding: 12px;
-  }
-
-  .bartho-demo-layout .chat {
-    display: flex;
-    flex: 0 0 auto;
-    width: 100%;
-    min-width: 0;
-    min-height: 180px;
-    height: 240px;
-    max-height: 40vh;
-    overflow-x: hidden;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  .bartho-demo-layout .actions {
-    flex: 0 0 auto;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 7px;
-    padding: 10px;
-  }
-
-  .bartho-demo-layout .actions button {
-    max-width: 100%;
-    white-space: normal;
-    overflow-wrap: anywhere;
-    font-size: 12px;
-    padding: 9px 11px;
-  }
-
-  .bartho-demo-layout .inputrow {
-    display: flex;
-    flex: 0 0 auto;
-    width: 100%;
-    min-width: 0;
-    gap: 8px;
-    padding: 10px;
-  }
-
-  .bartho-demo-layout .inputrow input {
-    flex: 1 1 auto;
-    width: 1%;
-    min-width: 0;
-    font-size: 16px; /* evita zoom automático ao focar no iPhone */
-  }
-
-  .bartho-demo-layout .inputrow button {
-    flex: 0 0 46px;
-    min-width: 46px;
-    min-height: 44px;
-    padding: 0;
-  }
-
-  /* Espaço extra para o texto explicativo não ficar atrás do footer fixo. */
-  .footer {
-    height: auto;
-    min-height: 62px;
-    padding: 8px 12px calc(8px + env(safe-area-inset-bottom, 0px));
-    gap: 8px;
-    flex-wrap: nowrap;
-    align-items: center;
-  }
-
-  .brand {
-    flex: 1 1 auto;
-    min-width: 0;
-    font-size: 10px;
-    line-height: 1.25;
-    letter-spacing: .05em;
-  }
-
-  .controls { flex: 0 0 auto; gap: 6px; }
-  .controls button {
-    min-width: 38px;
-    min-height: 40px;
-    padding: 8px 10px;
-    border-radius: 10px;
-    font-size: 17px;
-  }
-  .counter { min-width: 48px; font-size: 12px; white-space: nowrap; }
-  .progress { bottom: 0; z-index: 12; }
-
-  .duo .grid.two figure {
-    width: 100%;
-    height: 320px;
-    max-width: 100%;
-  }
-}
-
-@media (max-width: 420px) {
-  .slide,
-  .slide.active {
-    padding-left: 16px;
-    padding-right: 16px;
-    padding-bottom: calc(110px + env(safe-area-inset-bottom, 0px));
-  }
-
-  h1 {
-    font-size: clamp(40px, 11vw, 54px);
-    line-height: 1;
-    overflow-wrap: anywhere;
-  }
-  h2 {
-    font-size: clamp(25px, 7vw, 32px);
-    line-height: 1.08;
-    overflow-wrap: anywhere;
-  }
-  .lead { font-size: 20px; }
-
-  .footer { padding-left: 8px; padding-right: 8px; gap: 5px; }
-  .brand { font-size: 9px; letter-spacing: .035em; }
-  .controls { gap: 4px; }
-  .controls button {
-    min-width: 34px;
-    min-height: 38px;
-    padding: 7px 8px;
-    font-size: 16px;
-  }
-  .counter { min-width: 43px; font-size: 11px; }
-
-  .bartho-brand-panel { padding: 16px; }
-  .bartho-panel-character { height: 175px; flex-basis: 175px; }
-  .bartho-demo-layout .chat { height: 220px; max-height: 38vh; }
-}
+  /* Slide 8: cartão e conversa ficam em sequência vertical, sem alturas fixas
