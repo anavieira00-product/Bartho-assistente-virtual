@@ -48,13 +48,17 @@
 
   /* As etiquetas entram no fluxo e deixam de cobrir os cards/textos. */
   .cue {
-    position: static;
+    position: relative;
+    left: auto;
+    right: auto;
+    top: auto;
+    bottom: auto;
     display: inline-flex;
     align-self: flex-start;
     flex-wrap: wrap;
     width: fit-content;
     max-width: 100%;
-    margin-top: 14px;
+    margin: 8px 0 14px;
     white-space: normal;
     overflow-wrap: anywhere;
     font-size: 9px;
