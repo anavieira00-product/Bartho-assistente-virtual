@@ -1,58 +1,46 @@
 /* Responsividade mobile do Bartho.
-   Carregado depois de style.css; não altera o layout de desktop. */
+   Todas as regras ficam dentro de media queries: desktop permanece intacto. */
 @media (max-width: 760px) {
-  html,
-  body {
+  html, body {
     width: 100%;
     max-width: 100%;
+    height: 100%;
     overflow: hidden;
   }
 
-  /* Cada slide pode crescer e ser rolado verticalmente. */
+  .deck {
+    height: 100dvh;
+    height: 100vh; /* fallback para navegadores sem dvh */
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  /* O próprio slide rola; a barra de navegação continua fixa. */
   .slide,
   .slide.active {
     box-sizing: border-box;
-    padding: 28px 20px 132px;
+    padding: 28px 20px calc(100px + env(safe-area-inset-bottom, 0px));
     overflow-x: hidden;
     overflow-y: auto;
-    justify-content: flex-start;
+    overscroll-behavior-y: contain;
     -webkit-overflow-scrolling: touch;
+    justify-content: flex-start;
+    align-items: stretch;
   }
 
-  .slide > * {
-    min-width: 0;
-    max-width: 100%;
-  }
+  .slide > * { min-width: 0; max-width: 100%; }
+  img, video, canvas, iframe { max-width: 100%; }
 
-  img,
-  video,
-  canvas,
-  iframe {
-    max-width: 100%;
-  }
-
-  .grid,
-  .grid.two,
-  .arch,
-  .comparison,
-  .metrics,
-  .profile,
-  .duo {
+  .grid, .grid.two, .arch, .comparison, .metrics, .profile, .duo {
     min-width: 0;
     grid-template-columns: minmax(0, 1fr);
   }
+  .step { min-width: 0; }
 
-  .step {
-    min-width: 0;
-  }
-
-  /* As etiquetas entram no fluxo e deixam de cobrir os cards/textos. */
+  /* Etiquetas no fluxo, sem sobrepor títulos ou textos. */
   .cue {
     position: relative;
-    left: auto;
-    right: auto;
-    top: auto;
-    bottom: auto;
+    inset: auto;
     display: inline-flex;
     align-self: flex-start;
     flex-wrap: wrap;
@@ -65,14 +53,133 @@
     line-height: 1.4;
     gap: 5px;
     padding: 4px 8px;
-    z-index: auto;
+    z-index: 1;
   }
 
-  /* A barra acompanha a largura do celular e pode crescer com os controles. */
+  /* Slide 8: deixa cartão e chat no fluxo vertical e não corta o cartão. */
+  .bartho-demo-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: stretch;
+    gap: 14px;
+    width: 100%;
+    max-width: 100%;
+    max-height: none;
+    min-height: 0;
+    height: auto;
+    overflow: visible;
+  }
+
+  .bartho-brand-panel {
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+    min-height: 0;
+    height: auto;
+    overflow: visible;
+    padding: 18px;
+  }
+
+  .bartho-panel-character {
+    display: block;
+    width: 100%;
+    height: 190px;
+    max-height: none;
+    flex: 0 0 190px;
+    object-fit: contain;
+    object-position: center bottom;
+    margin: 8px auto 4px;
+  }
+
+  .bartho-brand-panel h3 {
+    flex: 0 0 auto;
+    margin: 4px 0 8px;
+    overflow-wrap: anywhere;
+  }
+
+  .bartho-brand-panel p {
+    flex: 0 0 auto;
+    margin: 0 0 12px;
+  }
+
+  .assistant-status {
+    flex: 0 0 auto;
+    margin-top: 8px;
+  }
+
+  .bartho-demo-layout .demo {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    min-width: 0;
+    min-height: 0;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .bartho-demo-layout .demo-head {
+    flex: 0 0 auto;
+    min-height: 64px;
+    padding: 12px;
+  }
+
+  .bartho-demo-layout .chat {
+    display: flex;
+    flex: 0 0 auto;
+    width: 100%;
+    min-width: 0;
+    min-height: 180px;
+    height: 240px;
+    max-height: 40vh;
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .bartho-demo-layout .actions {
+    flex: 0 0 auto;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    padding: 10px;
+  }
+
+  .bartho-demo-layout .actions button {
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    font-size: 12px;
+    padding: 9px 11px;
+  }
+
+  .bartho-demo-layout .inputrow {
+    display: flex;
+    flex: 0 0 auto;
+    width: 100%;
+    min-width: 0;
+    gap: 8px;
+    padding: 10px;
+  }
+
+  .bartho-demo-layout .inputrow input {
+    flex: 1 1 auto;
+    width: 1%;
+    min-width: 0;
+    font-size: 16px; /* evita zoom automático ao focar no iPhone */
+  }
+
+  .bartho-demo-layout .inputrow button {
+    flex: 0 0 46px;
+    min-width: 46px;
+    min-height: 44px;
+    padding: 0;
+  }
+
+  /* Espaço extra para o texto explicativo não ficar atrás do footer fixo. */
   .footer {
     height: auto;
-    min-height: 66px;
-    padding: 8px 12px;
+    min-height: 62px;
+    padding: 8px 12px calc(8px + env(safe-area-inset-bottom, 0px));
     gap: 8px;
     flex-wrap: nowrap;
     align-items: center;
@@ -83,14 +190,10 @@
     min-width: 0;
     font-size: 10px;
     line-height: 1.25;
-    letter-spacing: .07em;
+    letter-spacing: .05em;
   }
 
-  .controls {
-    flex: 0 0 auto;
-    gap: 6px;
-  }
-
+  .controls { flex: 0 0 auto; gap: 6px; }
   .controls button {
     min-width: 38px;
     min-height: 40px;
@@ -98,39 +201,11 @@
     border-radius: 10px;
     font-size: 17px;
   }
-
-  .counter {
-    min-width: 48px;
-    font-size: 12px;
-    white-space: nowrap;
-  }
-
-  .progress {
-    bottom: 0;
-    z-index: 12;
-  }
-
-  .bartho-demo-layout {
-    grid-template-columns: minmax(0, 1fr);
-    max-height: none;
-    min-height: 0;
-  }
-
-  .bartho-brand-panel {
-    min-height: 250px;
-  }
-
-  .bartho-panel-character {
-    height: 180px;
-    flex: none;
-  }
-
-  .bartho-demo-layout .chat {
-    min-height: 160px;
-    max-height: 250px;
-  }
+  .counter { min-width: 48px; font-size: 12px; white-space: nowrap; }
+  .progress { bottom: 0; z-index: 12; }
 
   .duo .grid.two figure {
+    width: 100%;
     height: 320px;
     max-width: 100%;
   }
@@ -141,7 +216,7 @@
   .slide.active {
     padding-left: 16px;
     padding-right: 16px;
-    padding-bottom: 138px;
+    padding-bottom: calc(110px + env(safe-area-inset-bottom, 0px));
   }
 
   h1 {
@@ -149,40 +224,25 @@
     line-height: 1;
     overflow-wrap: anywhere;
   }
-
   h2 {
     font-size: clamp(25px, 7vw, 32px);
     line-height: 1.08;
     overflow-wrap: anywhere;
   }
+  .lead { font-size: 20px; }
 
-  .lead {
-    font-size: 20px;
-  }
-
-  .footer {
-    padding: 7px 8px;
-    gap: 5px;
-  }
-
-  .brand {
-    font-size: 9px;
-    letter-spacing: .04em;
-  }
-
-  .controls {
-    gap: 4px;
-  }
-
+  .footer { padding-left: 8px; padding-right: 8px; gap: 5px; }
+  .brand { font-size: 9px; letter-spacing: .035em; }
+  .controls { gap: 4px; }
   .controls button {
     min-width: 34px;
     min-height: 38px;
     padding: 7px 8px;
     font-size: 16px;
   }
+  .counter { min-width: 43px; font-size: 11px; }
 
-  .counter {
-    min-width: 43px;
-    font-size: 11px;
-  }
+  .bartho-brand-panel { padding: 16px; }
+  .bartho-panel-character { height: 175px; flex-basis: 175px; }
+  .bartho-demo-layout .chat { height: 220px; max-height: 38vh; }
 }
