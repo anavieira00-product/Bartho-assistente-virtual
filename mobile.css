@@ -237,3 +237,14 @@
   .bartho-panel-character { height: 175px; flex-basis: 175px; }
   .bartho-demo-layout .chat { height: 200px; max-height: 200px; }
 }
+@media (max-width: 760px) {
+  .slide.active {
+    padding-bottom: calc(100px + env(safe-area-inset-bottom, 0px)) !important;
+    scroll-padding-bottom: calc(100px + env(safe-area-inset-bottom, 0px));
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .slide.active > :last-child {
+    margin-bottom: 20px;
+  }
+}
